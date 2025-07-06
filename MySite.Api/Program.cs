@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MySite.Application.Interfaces;
 using MySite.Application.Interfaces.Auth;
+using MySite.Application.Services;
 using MySite.DataAccess.Persistence;
 using MySite.DataAccess.Persistence.Repositories;
 using MySite.DataAccess.Services;
@@ -23,6 +24,7 @@ services.AddDbContext<MySiteDbContext>(options =>
 services.AddScoped<IUsersRepository, UsersRepository>();
 services.AddScoped<IJwtProvider, JwtProvider>();
 services.AddScoped<IPasswordHasher, PasswordHasher>();
+services.AddScoped<UsersService>();
 
 var app = builder.Build();
 

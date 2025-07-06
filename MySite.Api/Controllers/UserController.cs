@@ -10,6 +10,11 @@ public class UserController : ControllerBase
 {
     private readonly UsersService _usersService;
 
+    public UserController(UsersService usersService)
+    {
+        _usersService = usersService;
+    }
+
     [ HttpPost("register")]
     public async Task<IActionResult> Register(
         RegisterUserRequest request)
