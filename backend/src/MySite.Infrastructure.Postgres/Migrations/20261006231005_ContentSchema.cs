@@ -42,26 +42,6 @@ namespace MySite.Infrastructure.Postgres.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "users",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    created = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    modified = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    login = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
-                    first_name = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
-                    last_name = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
-                    email = table.Column<string>(type: "text", nullable: false),
-                    password_hash = table.Column<string>(type: "text", nullable: false),
-                    right = table.Column<int>(type: "integer", nullable: false),
-                    profile_image = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_users", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "owner_profile_translations",
                 columns: table => new
                 {
@@ -163,9 +143,6 @@ namespace MySite.Infrastructure.Postgres.Migrations
 
             migrationBuilder.DropTable(
                 name: "project_translations");
-
-            migrationBuilder.DropTable(
-                name: "users");
 
             migrationBuilder.DropTable(
                 name: "owner_profiles");

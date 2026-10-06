@@ -38,8 +38,9 @@ PostgreSQL, одна публичная страница на Next.js читае
   `-m:1`), `dotnet test MySite.slnx` только из `backend/`.
 - Билд чистый: `TreatWarningsAsErrors` + четыре анализатора. Анализатор не глушится — сначала
   чинится код, потом решение владельца с записью в реестр `WORKFLOW.md`.
-- Версии пинуются точно и ровно в одном месте (`Directory.Packages.props` для бэкенда, корневой
-  `package.json` для фронтенда).
+- Версии пинуются точно и ровно в одном месте: `Directory.Packages.props` на бэкенде и
+  **pnpm-каталог в `pnpm-workspace.yaml`** на фронтенде (тикет 17; правило в `.dsh/AGENTS.md`
+  переписано).
 - Решение, которое дорого откатить, удивляет без контекста и выбрано из реальных альтернатив,
   оформляется ADR в `docs/adr/`.
 - Документы проекта ведутся на английском (`ARCHITECTURE.md`, ADR, `CONTEXT.md`), эта карта — на
@@ -50,6 +51,10 @@ PostgreSQL, одна публичная страница на Next.js читае
 
 <!-- индекс: одна строка на закрытый тикет. Открытые тикеты здесь не перечисляются — они лежат в issues/ -->
 
+- [01 — Удалить identity-стек и перегенерировать миграцию](issues/01-remove-identity-stack.md):
+  удалены 15 файлов и оба JWT-пакета, миграция перегенерирована (`20261006231005`, таблицы `users`
+  больше нет), `IContentRepository` и `IAuditable` на месте; сборка 0/0, `.globalconfig` не
+  тронут. Ветка `chore/remove-identity-stack`, коммит `9105f91`, не запушена.
 - [09 — Стек фронтенда и точные версии](issues/09-frontend-stack-and-versions.md): пины `next`
   16.4.0, `react`/`react-dom` 19.3.0, **`typescript` 6.0.3** (не `latest` 7.0.2 —
   `typescript-eslint` держит `<6.1.0`), `tailwindcss` 4.3.3, `eslint` 10.12.0; `transpilePackages`
@@ -58,7 +63,10 @@ PostgreSQL, одна публичная страница на Next.js читае
 - [17 — Где пинуются версии](issues/17-where-versions-are-pinned.md): pnpm-каталог в
   `pnpm-workspace.yaml`, пакеты ссылаются `"catalog:"`; правило в `.dsh/AGENTS.md` переписано;
   версия pnpm — через `devEngines.packageManager`, пол по Node — через `engines`; ADR не нужен.
-- [10 — Тест-контур и качество фронтенда](issues/10-frontend-quality-and-test-contour.md): раннер — **Vitest 5.0.3**, границы FSD — slint-plugin-boundaries + import/no-restricted-paths, хуки — **lefthook**, ESLint 10 только flat config; sync Server Components не тестируются ни одним раннером (вынесено в тикет 18), а «проверять типы только изменённых файлов» невыполнимо.
+- [10 — Тест-контур и качество фронтенда](issues/10-frontend-quality-and-test-contour.md): раннер —
+  **Vitest 5.0.3**, границы FSD — `eslint-plugin-boundaries` + `import/no-restricted-paths`, хуки —
+  **lefthook**, ESLint 10 только flat config; `async` Server Components не тестируются ни одним
+  раннером (вынесено в тикет 18), а «проверять типы только изменённых файлов» невыполнимо.
 
 Решения, принятые при разметке карты и записанные прямо здесь:
 
@@ -72,8 +80,8 @@ PostgreSQL, одна публичная страница на Next.js читае
 - **Дизайн** — минимальная типографика и токены; референсы владельца приходят этапом полировки.
 - **Тесты** — начинаем с архитектурных фитнес-функций и юнита на правило локали.
 - **CI** — GitHub Actions, build + test бэкенда.
-- **Identity-стек удаляется целиком** (тикет 01). Это отмена части ADR-0003 и требует нового ADR
-  (тикет 02).
+- **Identity-стек удаляется целиком** (тикет 01 выполнен). Это отмена части ADR-0003 и требует
+  нового ADR (тикет 02).
 
 ## Not yet specified
 

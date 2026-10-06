@@ -37,9 +37,5 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
-  },
-  "JwtOptions": {
-    "SecretKey": "2D402E86-4D0A-421B-99AB-4E245105C698",
-    "ExpiresHours": "12"
   }
 }

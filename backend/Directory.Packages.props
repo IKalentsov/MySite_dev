@@ -20,9 +20,10 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
-  <ItemGroup Label="Identity and security">
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
-    <PackageVersion Include="BCrypt.Net-Next" Version="4.2.1" />
+  <ItemGroup Label="Configuration and composition">
+    <!-- A library declares what it uses instead of relying on the packages EF Core happens to pull in. -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup Label="HTTP / OpenAPI">

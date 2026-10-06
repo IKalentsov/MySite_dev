@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using MySite.Domain.Content;
-using MySite.Infrastructure.Postgres.Entities;
 
 namespace MySite.Infrastructure.Postgres.Persistence;
 
@@ -11,8 +10,6 @@ public class MySiteDbContext : DbContext
     {
 
     }
-
-    public DbSet<UserEntity> Users { get; set; }
 
     public DbSet<OwnerProfile> OwnerProfiles { get; set; }
 
