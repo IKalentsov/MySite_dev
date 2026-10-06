@@ -80,8 +80,9 @@ It listens on `http://localhost:5054`. `src/MySite.Web/Content.http` holds a req
 endpoint and for both health probes. In Development the OpenAPI document is at
 `/openapi/v1.json` and Scalar renders it at `/scalar/v1`.
 
-The account endpoints are still not reachable: the authentication pipeline is not wired, which is
-deliberate for the first phase ([ADR-0003](docs/adr/0003-public-site-first-phase.md)).
+The connection string placeholder in `appsettings.json` (`ConnectionStrings:DefaultConnection` set
+to `""`) causes a startup exception if no real value is provided — see the infrastructure layer's
+`AddInfrastructure` extension for the check.
 
 ## Definition of done
 

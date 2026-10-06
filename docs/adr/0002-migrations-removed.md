@@ -8,10 +8,8 @@ truth here — it runs locally in a container and holds nothing worth preserving
 
 ## Consequences
 
-The application cannot create its tables until the first migration is generated, so nothing runs
-against a fresh database yet; `WORKFLOW.md` says so. The old migration is still reachable in git
-history, and this record exists so it is not restored by mistake.
-
-The `snake_case` naming convention from the rules is not configured either. It belongs with the
-first migration, so the choice shows up in the schema it produces rather than in a convention
-nobody can see yet.
+The first migration, `20261006231005_ContentSchema`, generates the content tables and applies the
+`snake_case` naming convention (`EFCore.NamingConventions` package +
+`UseSnakeCaseNamingConvention()` in `AddInfrastructure`). The application can now create its
+schema on a fresh database. The old migration is still reachable in git history, and this record
+exists so it is not restored by mistake.

@@ -33,5 +33,5 @@ project's own name for the code.
 **Страница «обо мне»** — the landing content: who the owner is and what he is like as a developer.
 Not a CV and not a list of technologies; the list of work is its own thing.
 
-**Админка** — the future private interface where the owner manages the site's content. It is the
-reason authentication exists in this codebase at all, and it is designed after the public part.
+**Админка** — the future private interface where the owner manages the site's content. Authentication
+will be written for it from scratch ([ADR-0006](docs/adr/0006-identity-stack-removed.md)).
