@@ -38,9 +38,10 @@ ADR-0003 не переписываются — их текст остаётся 
 **5. `CONTEXT.md`:** в термине «Админка» убрать «It is the reason authentication exists in this
 codebase at all» — авторизации в коде нет. Правка минимальная: определение панели остаётся.
 
-**6. `.dsh/AGENTS.md`, § Project facts:** убрать `JWT bearer + BCrypt` из строки Backend stack;
-убрать из «Later» открытый вопрос «Whether the existing users and JWT code becomes the panel's
-foundation or is replaced» и упоминание JWT-секрета в `launchSettings.json` (секрет удалён).
+**6. `.dsh/AGENTS.md` — правит планер, не исполнитель.** Файл задаёт правила для всех агентов, и его
+правки в задачу исполнителя не входят: строка `Backend stack` (убрать `JWT bearer + BCrypt`) и два
+пункта в § Open questions → «Later» про users/JWT-код и про JWT-секрет в `launchSettings.json`.
+**Исполнитель этот файл не трогает вовсе.**
 
 **7. `frontend/README.md`:** говорит, что стек не решён, и приводит Vite — при том что ADR-0004 и
 `.dsh/AGENTS.md` выбрали Next.js App Router, FSD и pnpm-монорепу. Привести в соответствие и

@@ -586,7 +586,7 @@ facts below survive.
 | Copy | The site's text is written, not transcribed. The owner's own words are the source; what appears on the site is a proper text |
 | Visual design | Not started. The owner brings references later; until then the page has to read acceptably as plain text |
 | Languages | Russian first, English behind a switch. Public routes are `/[lang]/...`; each text is stored per locale in translation tables ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)) |
-| Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); JWT bearer + BCrypt; OpenAPI + Scalar |
+| Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); OpenAPI + Scalar |
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
 | Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
 | Package set and versions | stated once, in `backend/Directory.Packages.props`; no `.csproj` carries a `Version` |
@@ -624,10 +624,8 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 - The administration panel: its screens, its content model, and what it may change.
 - The visual design, which waits on the owner's references.
-- Whether the existing users and JWT code becomes the panel's foundation or is replaced.
-- `Properties/launchSettings.json` still carries a JWT secret for the dormant account code. The
-  PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env` and
-  `appsettings.Development.json`.
+- The PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env`
+  and `appsettings.Development.json`.
 
 ## Build templates
 
