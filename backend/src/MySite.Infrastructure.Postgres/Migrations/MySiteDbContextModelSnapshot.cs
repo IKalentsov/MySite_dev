@@ -196,65 +196,6 @@ namespace MySite.Infrastructure.Postgres.Migrations
                     b.ToTable("project_translations", (string)null);
                 });
 
-            modelBuilder.Entity("MySite.Infrastructure.Postgres.Entities.UserEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("email");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("first_name");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("last_name");
-
-                    b.Property<string>("Login")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("login");
-
-                    b.Property<DateTime>("Modified")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("password_hash");
-
-                    b.Property<string>("ProfileImage")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("profile_image");
-
-                    b.Property<int>("Right")
-                        .HasColumnType("integer")
-                        .HasColumnName("right");
-
-                    b.HasKey("Id")
-                        .HasName("pk_users");
-
-                    b.ToTable("users", (string)null);
-                });
-
             modelBuilder.Entity("MySite.Domain.Content.OwnerProfileTranslation", b =>
                 {
                     b.HasOne("MySite.Domain.Content.OwnerProfile", null)

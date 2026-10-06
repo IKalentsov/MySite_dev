@@ -2,12 +2,8 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MySite.Application.Content;
-using MySite.Application.Interfaces;
-using MySite.Application.Interfaces.Auth;
-using MySite.Application.Services;
 using MySite.Infrastructure.Postgres.Persistence;
 using MySite.Infrastructure.Postgres.Persistence.Repositories;
-using MySite.Infrastructure.Postgres.Services;
 using MySite.Web.HealthChecks;
 using MySite.Web.Middleware;
 using Scalar.AspNetCore;
@@ -39,10 +35,6 @@ services.AddDbContext<MySiteDbContext>(options =>
 });
 
 services.AddScoped<IContentRepository, ContentRepository>();
-services.AddScoped<IUsersRepository, UsersRepository>();
-services.AddScoped<IJwtProvider, JwtProvider>();
-services.AddScoped<IPasswordHasher, PasswordHasher>();
-services.AddScoped<UsersService>();
 
 var app = builder.Build();
 
