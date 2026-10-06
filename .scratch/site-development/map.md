@@ -58,6 +58,7 @@ PostgreSQL, одна публичная страница на Next.js читае
 - [17 — Где пинуются версии](issues/17-where-versions-are-pinned.md): pnpm-каталог в
   `pnpm-workspace.yaml`, пакеты ссылаются `"catalog:"`; правило в `.dsh/AGENTS.md` переписано;
   версия pnpm — через `devEngines.packageManager`, пол по Node — через `engines`; ADR не нужен.
+- [10 — Тест-контур и качество фронтенда](issues/10-frontend-quality-and-test-contour.md): раннер — **Vitest 5.0.3**, границы FSD — slint-plugin-boundaries + import/no-restricted-paths, хуки — **lefthook**, ESLint 10 только flat config; sync Server Components не тестируются ни одним раннером (вынесено в тикет 18), а «проверять типы только изменённых файлов» невыполнимо.
 
 Решения, принятые при разметке карты и записанные прямо здесь:
 
