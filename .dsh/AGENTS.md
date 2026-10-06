@@ -587,7 +587,7 @@ facts below survive.
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
 | Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
 | Package set and versions | stated once, in `backend/Directory.Packages.props`; no `.csproj` carries a `Version` |
-| Database | PostgreSQL via `backend/docker-compose.yml`; the schema is one generated migration |
+| Database | PostgreSQL in Docker via `backend/docker-compose.yml`, published on `localhost:5433`; credentials in the untracked `backend/.env`; the schema is one generated migration |
 | Commands | `WORKFLOW.md` |
 | Architecture | `ARCHITECTURE.md` |
 | Vocabulary | `CONTEXT.md` |
@@ -621,8 +621,9 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 - The administration panel: its screens, its content model, and what it may change.
 - The visual design, which waits on the owner's references.
 - Whether the existing users and JWT code becomes the panel's foundation or is replaced.
-- `src/MySite.Web/appsettings.json` carries a development PostgreSQL password, and
-  `Properties/launchSettings.json` carries a JWT secret for the dormant account code.
+- `Properties/launchSettings.json` still carries a JWT secret for the dormant account code. The
+  PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env` and
+  `appsettings.Development.json`.
 
 ## Build templates
 

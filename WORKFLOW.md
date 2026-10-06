@@ -42,15 +42,28 @@ docker compose up -d
 docker compose down
 ```
 
-`docker-compose.yml` starts one PostgreSQL service on `localhost:5432` behind a named volume.
-Docker 29.7.2 and Compose v5.3.1 are installed here. The `version:` key in that file is obsolete
-for Compose v5 and only produces a warning.
+`docker-compose.yml` starts one PostgreSQL service behind a named volume, shaped after the
+DirectoryService project's compose file: the credentials come from `backend/.env` (untracked;
+`.env.example` is the template), the container restarts itself, and the volume is mounted at the
+image's own `PGDATA` rather than at a guessed path. Two differences from that template are
+deliberate and commented in the file: no `container_name`, which would collide with another
+project's container of that name, and a pinned image tag, because the volume layout belongs to a
+PostgreSQL major version.
+
+**It listens on `localhost:5433`, not 5432.** A native PostgreSQL service is installed on this
+machine and owns port 5432, and Windows resolves `localhost` to `::1` first — a container published
+on 5432 is never reached, and the application silently talks to the local server instead. That is
+also why the template picks its own port.
 
 The schema lives in generated migrations. Apply them with:
 
 ```powershell
 dotnet ef database update -p src/MySite.Infrastructure.Postgres -s src/MySite.Web
 ```
+
+The connection string lives in `src/MySite.Web/appsettings.Development.json`, which git ignores, so
+no credential is committed. `dotnet ef` reads the launch profile, which sets the Development
+environment, so it finds the same file.
 
 `MySite.Web` carries `Microsoft.EntityFrameworkCore.Design` because `dotnet ef` needs it in the
 startup project; in the infrastructure project the same package is `PrivateAssets="all"`, so it

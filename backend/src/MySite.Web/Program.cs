@@ -14,6 +14,7 @@ using Scalar.AspNetCore;
 
 const string LivenessCheck = "self";
 const string ReadinessCheck = "postgres";
+const string ConnectionStringName = "DefaultConnection";
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -33,7 +34,7 @@ services.AddHealthChecks()
 services.AddDbContext<MySiteDbContext>(options =>
 {
     options
-        .UseNpgsql(configuration.GetConnectionString(nameof(MySiteDbContext)))
+        .UseNpgsql(configuration.GetConnectionString(ConnectionStringName))
         .UseSnakeCaseNamingConvention();
 });
 
