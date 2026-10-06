@@ -32,6 +32,19 @@ PostgreSQL, одна публичная страница на Next.js читае
 - Планирование и документы: `grilling`, `domain-modeling`, `research`, `architecture-drift-check`,
   `writing-guidelines`.
 
+**Как задача выдаётся исполнителю.**
+
+- Каждая задача — своя ветка от актуального `master`, имя `<тип>/<NN>-<slug>` (`NN` — номер
+  тикета). Это правило записано и в `.dsh/AGENTS.md`, § Project facts, строка `Git protocol`, чтобы
+  его не приходилось повторять вслух.
+- Исполнитель **никогда не пушит**: ни `git push`, ни force, ни merge в `master`/`develop`, ни pull
+  request. Пуш и слияние — владельца.
+- Исполнитель загружает скиллы до начала работы: названные в промте задачи плюс те, что перечислены
+  выше для его области. Механика — раздел «Skills» в `.dsh/AGENTS.md`.
+- Исполнитель не трогает `.scratch/`, кроме файла своего тикета; `map.md` правит только планер.
+- Стоячий бриф со всеми общими правилами — `prompts/00-executor-brief.md`; промт каждой задачи на
+  него ссылается. Промты лежат в `prompts/`.
+
 **Стоячие правила проекта.**
 
 - Команды берутся из `WORKFLOW.md`, а не из памяти: `dotnet build MySite.slnx` (в песочнице
@@ -67,6 +80,12 @@ PostgreSQL, одна публичная страница на Next.js читае
   **Vitest 5.0.3**, границы FSD — `eslint-plugin-boundaries` + `import/no-restricted-paths`, хуки —
   **lefthook**, ESLint 10 только flat config; `async` Server Components не тестируются ни одним
   раннером (вынесено в тикет 18), а «проверять типы только изменённых файлов» невыполнимо.
+- [19 — Композиция DI по слоям](issues/19-composition-by-layer.md): `Program.cs` — только конвейер;
+  `AddInfrastructure(IConfiguration)` владеет `AddDbContext`, naming convention и репозиторием;
+  health checks разведены тегами `live`/`ready`; строка подключения читается из
+  `ConnectionStrings:DefaultConnection` и останавливает старт, если пуста. Коммит `9d7c74a`.
+- [05 — Починить устаревшие документы](issues/05-fix-stale-documents.md): закрыт **поглощением
+  тикетом 02** — обе задачи правят один `ARCHITECTURE.md`, и делать это двумя заходами незачем.
 
 Решения, принятые при разметке карты и записанные прямо здесь:
 

@@ -599,6 +599,7 @@ facts below survive.
 | First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel ([ADR-0003](docs/adr/0003-public-site-first-phase.md)) |
 | Planned | The administration panel and the visual design; both after the public page |
 | Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
+| Git protocol | One task, one branch off the current `master`, named `<type>/<NN>-<slug>` where `NN` is the ticket number in `.scratch/site-development`. An executor commits to that branch and **never pushes**: no `git push`, no force push, no merge into `master` or `develop`, no pull request. Pushing and merging belong to the owner |
 
 ### Open questions
 
