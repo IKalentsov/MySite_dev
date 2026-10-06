@@ -582,7 +582,7 @@ facts below survive.
 | A project entry | Title, short description, technology stack, a link to the repository or a demo, and the year |
 | Copy | The site's text is written, not transcribed. The owner's own words are the source; what appears on the site is a proper text |
 | Visual design | Not started. The owner brings references later; until then the page has to read acceptably as plain text |
-| Languages | Russian first, English behind a switch. How the switch appears in routes and content is undecided |
+| Languages | Russian first, English behind a switch. Public routes are `/[lang]/...`; each text is stored per locale in translation tables ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)) |
 | Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); JWT bearer + BCrypt; OpenAPI + Scalar |
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
 | Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
@@ -592,6 +592,7 @@ facts below survive.
 | Architecture | `ARCHITECTURE.md` |
 | Vocabulary | `CONTEXT.md` |
 | Decisions | `docs/adr/` |
+| Research | `docs/research/` |
 | First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel ([ADR-0003](docs/adr/0003-public-site-first-phase.md)) |
 | Planned | The administration panel and the visual design; both after the public page |
 | Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
@@ -603,11 +604,9 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 **Blocking the first page**
 
-- The database schema for the site's content is not designed: no table, no migration, no seed.
-  Until it exists the page has nothing to read.
+- The database schema is decided in shape but not written: no table, no migration, no seed. Until
+  it exists the page has nothing to read.
 - The frontend project does not exist: `frontend/` holds a README and nothing else.
-- How the Russian/English switch appears in routes and content is undecided, and it changes every
-  URL.
 
 **Frontend, carried over from ADR-0004**
 
@@ -623,7 +622,6 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 - The visual design, which waits on the owner's references.
 - Whether the existing users and JWT code becomes the panel's foundation or is replaced.
 - `src/MySite.Web/appsettings.json` carries a development PostgreSQL password in the repository.
-- `README.md` is still the one-line stub; it can be written now that the site has a definition.
 
 ## Build templates
 
