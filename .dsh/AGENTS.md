@@ -576,7 +576,7 @@ facts below survive.
 |---|---|
 | Sections adopted | `shared`, `backend`, `frontend` |
 | Skills installed | 46, flat in `.dsh/skills`. The four `sqlserver-*` skills were removed on the owner's decision: the database is PostgreSQL, not SQL Server |
-| The site | The personal site of Колинцов Илья Михайлович — a .NET developer of more than eight years, with Angular on the frontend. This site is his first React project, built to learn the stack |
+| The site | The personal site of Илья Каленцов — a .NET developer of more than eight years, with Angular on the frontend. This site is his first React project, built to learn the stack |
 | First screen | One page: an "about me" block, then a list of the owner's projects |
 | Content | Lives in PostgreSQL and is edited through the administration panel; the API is what serves it to the site |
 | A project entry | Title, short description, technology stack, a link to the repository or a demo, and the year |
