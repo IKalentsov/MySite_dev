@@ -46,8 +46,16 @@ docker compose down
 Docker 29.7.2 and Compose v5.3.1 are installed here. The `version:` key in that file is obsolete
 for Compose v5 and only produces a warning.
 
-There are no EF Core migrations in the repository: they were removed deliberately and are
-generated again once the schema is settled. Until then the application cannot create its tables.
+The schema lives in generated migrations. Apply them with:
+
+```powershell
+dotnet ef database update -p src/MySite.Infrastructure.Postgres -s src/MySite.Web
+```
+
+`MySite.Web` carries `Microsoft.EntityFrameworkCore.Design` because `dotnet ef` needs it in the
+startup project; in the infrastructure project the same package is `PrivateAssets="all"`, so it
+does not flow onward. Migration files are declared as generated code by the `.editorconfig` beside
+them, which keeps the analysers off code nobody wrote instead of silencing rules one by one.
 
 ## Run the API
 

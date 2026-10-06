@@ -25,10 +25,11 @@ its own table, and its texts in a `<entity>_translations` table keyed by `(entit
 - Reading content costs one join. For a page with a profile and a list of projects that is two joins,
   and it is the price of locales being data rather than schema.
 - Adding a language is inserting rows, not running a migration.
-- **The fallback belongs to the application layer.** A query returns the requested locale and the
-  default one; the application picks the requested text and falls back to Russian when the
-  translation is absent. Keeping it out of SQL means the rule is testable without a database, and an
-  untranslated project shows its Russian text rather than disappearing.
+- **The fallback lives in code, never in SQL.** A read loads the entity with its translations, and
+  the entity answers `TranslationFor(locale)` — the requested text, or the default language's text
+  when that translation is absent, or nothing when neither exists. Keeping the rule out of the
+  query means an untranslated project shows its Russian text rather than disappearing, and the rule
+  is testable without a database.
 - **The API takes an explicit `locale`, and ignores `Accept-Language`.** The site's locale is a fact
   about the URL, not about the browser: after a visitor flips the switch to English, their browser
   still advertises Russian. An explicit parameter is also cacheable per URL and trivial to test.

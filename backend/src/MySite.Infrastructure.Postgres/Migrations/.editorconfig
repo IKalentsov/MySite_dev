@@ -1,0 +1,8 @@
+# Migrations are produced by `dotnet ef migrations add` and must not be edited by hand, so they are
+# declared as generated code here. That is the SDK's own mechanism for exactly this case: the
+# analysers skip code nobody wrote, instead of silencing rule after rule for a whole folder.
+
+root = false
+
+[*.cs]
+generated_code = true

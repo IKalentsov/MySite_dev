@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MySite.Application.Content;
 using MySite.Application.Interfaces;
 using MySite.Application.Interfaces.Auth;
 using MySite.Application.Services;
@@ -16,9 +17,12 @@ services.AddOpenApi();
 
 services.AddDbContext<MySiteDbContext>(options =>
 {
-    options.UseNpgsql(configuration.GetConnectionString(nameof(MySiteDbContext)));
+    options
+        .UseNpgsql(configuration.GetConnectionString(nameof(MySiteDbContext)))
+        .UseSnakeCaseNamingConvention();
 });
 
+services.AddScoped<IContentRepository, ContentRepository>();
 services.AddScoped<IUsersRepository, UsersRepository>();
 services.AddScoped<IJwtProvider, JwtProvider>();
 services.AddScoped<IPasswordHasher, PasswordHasher>();

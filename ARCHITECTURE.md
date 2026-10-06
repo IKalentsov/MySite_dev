@@ -72,6 +72,28 @@ The domain holds one entity, `User`, plus the `UserRight` enum and the `IAuditab
 `Contracts` holds the two request DTOs, `LoginUserRequest` and `RegisterUserRequest`. The Postgres
 project persists `UserEntity` through `MySiteDbContext` and `UserConfiguration`.
 
+## Content model
+
+The public page reads two things: the owner's profile and the published projects. Every text exists
+per locale ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)), so a translatable field lives
+in a translation table while everything language-independent stays in the main table.
+
+| Table | Holds |
+|---|---|
+| `owner_profiles` | The single profile, with its creation and update timestamps |
+| `owner_profile_translations` | One row per locale: `headline`, `about`. Unique on `(owner_profile_id, locale)` |
+| `projects` | One row per project: `link`, `year`, `sort_order`, `is_published`, timestamps |
+| `project_translations` | One row per locale: `title`, `summary`. Unique on `(project_id, locale)` |
+| `project_stack_items` | A project's technologies, one row each, ordered by `position` |
+
+Reads go through `IContentRepository`, which the Application layer owns and the Postgres project
+implements. Every read is untracked, and the locale is resolved by `TranslationFor(locale)` on the
+entity: the requested locale first, the default locale's text second, nothing third.
+
+The schema is created by the project's only migration, generated with `dotnet ef migrations add`.
+That migration also creates the `users` table, which belongs to the identity code of
+[ADR-0003](docs/adr/0003-public-site-first-phase.md) and is not used by anything yet.
+
 ## Testing
 
 Three levels, one project each, and all three are empty skeletons: no test has been written yet.
@@ -94,6 +116,8 @@ thing to fill once the slices above it settle.
 | Table and column names are not configured as `snake_case` | Deliberate; see [ADR-0002](docs/adr/0002-migrations-removed.md) | Add the convention together with the first migration |
 | Login is a `GET` with a request body | Preserved from the original project to keep this change structural | Make it `POST` and set the HTTP contracts properly |
 | Domain factories return a tuple (`(User user, string Error)`) instead of `Result<T>` | Preserved from the original project; adopting the Result pattern is a design change | Introduce `CSharpFunctionalExtensions` and move the failures into typed results |
+| The content entities have no `Result<T>` factories | Deliberate: they are read models with no expected business errors, so a result type would carry a failure that cannot happen. The pattern earns its place where failures exist | Introduce it together with the admin panel's first write use case |
+| The content entities use plain `Guid` identifiers, not strongly-typed ones | Deliberate: the aggregates never reference each other by identifier, so the pattern would prevent a mix-up that cannot happen here | Introduce strongly-typed ids when one aggregate starts referencing another by id |
 
 ## Known problems
 
@@ -123,7 +147,6 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
 - Frontend code. `frontend/` is a reserved folder with a README; the stack is decided
   ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) and the project is not
   started, so nothing about it appears in the tables above.
-- EF Core migrations. They were removed on purpose and are generated again with the first schema.
 - CI configuration.
 - `CONTEXT.md`. It is the glossary of the project's own vocabulary, and the site has no product
   definition yet: writing terms now would mean inventing the product.

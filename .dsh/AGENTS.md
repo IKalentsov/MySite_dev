@@ -587,7 +587,7 @@ facts below survive.
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
 | Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
 | Package set and versions | stated once, in `backend/Directory.Packages.props`; no `.csproj` carries a `Version` |
-| Database | PostgreSQL via `backend/docker-compose.yml`; no migrations in the repository |
+| Database | PostgreSQL via `backend/docker-compose.yml`; the schema is one generated migration |
 | Commands | `WORKFLOW.md` |
 | Architecture | `ARCHITECTURE.md` |
 | Vocabulary | `CONTEXT.md` |
@@ -604,8 +604,10 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 **Blocking the first page**
 
-- The database schema is decided in shape but not written: no table, no migration, no seed. Until
-  it exists the page has nothing to read.
+- The API endpoints do not exist yet: the schema and the repository behind it are in place, but
+  nothing serves the content over HTTP.
+- Nothing is seeded: the page has nothing to read until the profile text and the projects are in
+  the database.
 - The frontend project does not exist: `frontend/` holds a README and nothing else.
 
 **Frontend, carried over from ADR-0004**
