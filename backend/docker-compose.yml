@@ -1,13 +1,17 @@
-# Local PostgreSQL for development, shaped after the DirectoryService project's compose file.
+# Local PostgreSQL for development, shaped after the DirectoryService project's compose file:
+# credentials come from .env, the container restarts itself, the volume is mounted at the image's
+# own PGDATA, and the host port is its own — so the container shows up in a database client as a
+# server of its own, next to the native PostgreSQL installation and next to directory_server.
 #
-# Two deliberate differences from that template:
-#   * no `container_name` — the template pins the name `postgres`, which collides with the
-#     container of that name another project already owns, and two projects can then never run
-#     at the same time. Letting Compose name the container keeps projects independent.
+# Two points where this file deliberately differs from that template:
+#   * the container name is `mysite_postgres`, not the template's generic `postgres` — that name
+#     is already taken by another project's container, and with it two projects can never run at
+#     the same time;
 #   * the image tag is pinned — `postgres` alone floats to a new major version, and the volume
 #     below is bound to the 18 layout, so a floating tag would eventually refuse to start.
 services:
   postgres:
+    container_name: mysite_postgres
     image: postgres:18.6-alpine
     restart: always
     environment:
