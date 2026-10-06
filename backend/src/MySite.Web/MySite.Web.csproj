@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MySite.Application\MySite.Application.csproj" />
+    <ProjectReference Include="..\MySite.Contracts\MySite.Contracts.csproj" />
+    <ProjectReference Include="..\MySite.Infrastructure.Postgres\MySite.Infrastructure.Postgres.csproj" />
+  </ItemGroup>
+
+</Project>

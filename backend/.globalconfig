@@ -1,0 +1,70 @@
+# TEMPLATE: analyser policy for a project. Each suppression below carries its reason; a project
+# keeps its own registry of disabled rules and its own decisions.
+is_global = true
+
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1873.severity = none
+dotnet_diagnostic.CA1727.severity = none
+dotnet_diagnostic.S6678.severity = none
+
+# MA0025: throw new NotImplementedException() reported as an error
+# dotnet_diagnostic.MA0025.severity = none
+
+# S125: commented-out code reported as an error
+# dotnet_diagnostic.S125.severity = none
+
+# Every rule in the security category is an error
+dotnet_analyzer_diagnostic.category-security.severity = error
+
+# CA2007: ConfigureAwait is unnecessary in ASP.NET Core (the framework manages the context)
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1062: null argument checks — nullable reference types already do this for us
+dotnet_diagnostic.CA1062.severity = none
+
+# CA1812: uninstantiated classes — false positives on DI classes
+dotnet_diagnostic.CA1812.severity = none
+
+# CA1034: nested types — a vertical slice keeps several types (Command/Handler) in one file
+dotnet_diagnostic.CA1034.severity = none
+
+# MA0004: ConfigureAwait is unnecessary in ASP.NET Core
+dotnet_diagnostic.MA0004.severity = none
+
+# MA0048: file name equals type name — conflicts with a vertical slice holding several types
+dotnet_diagnostic.MA0048.severity = none
+
+# MA0051: method length — use-case handlers are deliberately long
+dotnet_diagnostic.MA0051.severity = none
+
+# MA0053: sealed classes — too aggressive for DDD entities
+dotnet_diagnostic.MA0053.severity = none
+
+# RCS1090: ConfigureAwait is unnecessary in ASP.NET Core
+dotnet_diagnostic.RCS1090.severity = none
+
+# AsyncFixer01: removing async/await changes exception behaviour in middleware
+dotnet_diagnostic.AsyncFixer01.severity = none
+
+# S1135: TODO/FIXME comments are signposts, not defects
+dotnet_diagnostic.S1135.severity = none
+
+# S1144: unused private members — false positives on EF shadow properties
+dotnet_diagnostic.S1144.severity = none
+
+# Rules stricter than the default:
+dotnet_diagnostic.S1125.severity = error  # Redundant Boolean literal
+dotnet_diagnostic.S6673.severity = error  # Serilog template placeholder order
+dotnet_diagnostic.S108.severity  = error  # Empty catch block without a comment
+
+# Project-specific rules
+dotnet_diagnostic.CA1515.severity = none
+
+# CA1716: Start()/Stop() member names collide with a Visual Basic keyword. The names are fixed
+# by the task brief, the interface is consumed from C# only, and the suppression was agreed
+# with the user.
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1031: a background loop has to catch every exception. The brief requires it: an unexpected
+# failure in one iteration must not stop the service until it is restarted.
+dotnet_diagnostic.CA1031.severity = none

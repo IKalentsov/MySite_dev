@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="TngTech.ArchUnitNET" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MySite.Domain\MySite.Domain.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Application\MySite.Application.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Contracts\MySite.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Infrastructure.Postgres\MySite.Infrastructure.Postgres.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Web\MySite.Web.csproj" />
+  </ItemGroup>
+
+</Project>

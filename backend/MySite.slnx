@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MySite.Application/MySite.Application.csproj" />
+    <Project Path="src/MySite.Contracts/MySite.Contracts.csproj" />
+    <Project Path="src/MySite.Domain/MySite.Domain.csproj" />
+    <Project Path="src/MySite.Infrastructure.Postgres/MySite.Infrastructure.Postgres.csproj" />
+    <Project Path="src/MySite.Web/MySite.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MySite.ArchitectureTests/MySite.ArchitectureTests.csproj" />
+    <Project Path="tests/MySite.IntegrationTests/MySite.IntegrationTests.csproj" />
+    <Project Path="tests/MySite.UnitTests/MySite.UnitTests.csproj" />
+  </Folder>
+</Solution>
