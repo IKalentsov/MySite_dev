@@ -389,8 +389,11 @@ What counts as a design mistake:
 | Tests | Vitest, React Testing Library, MSW, Playwright |
 | Quality | ESLint (flat config), typescript-eslint, Prettier, git hooks |
 
-Exact versions are pinned in the monorepo root `package.json`; a version bump is a separate
-change with a reason.
+Exact versions are pinned in the **pnpm catalog** in `pnpm-workspace.yaml`; a workspace package
+references them as `"catalog:"` rather than repeating a range, and a version bump is a separate
+change with a reason. This replaces the base's "monorepo root `package.json`" wording (owner's
+decision): in a pnpm workspace a root `package.json` does not hold the packages to one React or one
+TypeScript, which is the drift the rule exists to prevent.
 
 **Monorepo layout (pnpm)**
 

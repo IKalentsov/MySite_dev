@@ -60,11 +60,3 @@ dotnet_diagnostic.S108.severity  = error  # Empty catch block without a comment
 # Project-specific rules
 dotnet_diagnostic.CA1515.severity = none
 
-# CA1716: Start()/Stop() member names collide with a Visual Basic keyword. The names are fixed
-# by the task brief, the interface is consumed from C# only, and the suppression was agreed
-# with the user.
-dotnet_diagnostic.CA1716.severity = none
-
-# CA1031: a background loop has to catch every exception. The brief requires it: an unexpected
-# failure in one iteration must not stop the service until it is restarted.
-dotnet_diagnostic.CA1031.severity = none
