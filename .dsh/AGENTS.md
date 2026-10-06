@@ -604,10 +604,8 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 **Blocking the first page**
 
-- The API endpoints do not exist yet: the schema and the repository behind it are in place, but
-  nothing serves the content over HTTP.
-- Nothing is seeded: the page has nothing to read until the profile text and the projects are in
-  the database.
+- Nothing is seeded: the endpoints exist, but the page has nothing to read until the profile text
+  and the projects are in the database.
 - The frontend project does not exist: `frontend/` holds a README and nothing else.
 
 **Frontend, carried over from ADR-0004**
@@ -623,7 +621,8 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 - The administration panel: its screens, its content model, and what it may change.
 - The visual design, which waits on the owner's references.
 - Whether the existing users and JWT code becomes the panel's foundation or is replaced.
-- `src/MySite.Web/appsettings.json` carries a development PostgreSQL password in the repository.
+- `src/MySite.Web/appsettings.json` carries a development PostgreSQL password, and
+  `Properties/launchSettings.json` carries a JWT secret for the dormant account code.
 
 ## Build templates
 

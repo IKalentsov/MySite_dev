@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:5054
+
+### The profile in the default locale (Russian)
+GET {{baseUrl}}/api/v1/profile
+
+### The profile in English
+GET {{baseUrl}}/api/v1/profile?locale=en
+
+### An unsupported locale — 400, with the list of supported locales
+GET {{baseUrl}}/api/v1/profile?locale=de
+
+### The published projects, in the default locale
+GET {{baseUrl}}/api/v1/projects
+
+### The published projects in English
+GET {{baseUrl}}/api/v1/projects?locale=en
+
+### Liveness: the process is up
+GET {{baseUrl}}/health/live
+
+### Readiness: unhealthy until the database answers
+GET {{baseUrl}}/health/ready

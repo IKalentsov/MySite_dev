@@ -63,9 +63,12 @@ them, which keeps the analysers off code nobody wrote instead of silencing rules
 dotnet run --project src/MySite.Web
 ```
 
-In Development the OpenAPI document is served and Scalar renders it. Not verified end to end yet:
-the connection string in `appsettings.json` is a development placeholder and the authentication
-pipeline is not wired.
+It listens on `http://localhost:5054`. `src/MySite.Web/Content.http` holds a request for every
+endpoint and for both health probes. In Development the OpenAPI document is at
+`/openapi/v1.json` and Scalar renders it at `/scalar/v1`.
+
+The account endpoints are still not reachable: the authentication pipeline is not wired, which is
+deliberate for the first phase ([ADR-0003](docs/adr/0003-public-site-first-phase.md)).
 
 ## Definition of done
 

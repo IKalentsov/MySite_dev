@@ -72,6 +72,16 @@ The domain holds one entity, `User`, plus the `UserRight` enum and the `IAuditab
 `Contracts` holds the two request DTOs, `LoginUserRequest` and `RegisterUserRequest`. The Postgres
 project persists `UserEntity` through `MySiteDbContext` and `UserConfiguration`.
 
+The public side is one controller. `ContentController` serves `GET /api/v1/profile` and
+`GET /api/v1/projects`, both taking an explicit `locale` query parameter — `ru` by default, `en`
+when asked for, and a 400 listing the supported values for anything else. Responses are
+`MySite.Contracts` records, so no domain type reaches the wire, and a project with no text in any
+locale is left out rather than rendered empty.
+
+Every response carries an `X-Correlation-Id`, taken from the request when the caller sent one and
+generated otherwise, and every error is an RFC 7807 problem document. `/health/live` answers
+whether the process is up; `/health/ready` answers whether the database can be reached.
+
 ## Content model
 
 The public page reads two things: the owner's profile and the published projects. Every text exists
@@ -118,6 +128,7 @@ thing to fill once the slices above it settle.
 | Domain factories return a tuple (`(User user, string Error)`) instead of `Result<T>` | Preserved from the original project; adopting the Result pattern is a design change | Introduce `CSharpFunctionalExtensions` and move the failures into typed results |
 | The content entities have no `Result<T>` factories | Deliberate: they are read models with no expected business errors, so a result type would carry a failure that cannot happen. The pattern earns its place where failures exist | Introduce it together with the admin panel's first write use case |
 | The content entities use plain `Guid` identifiers, not strongly-typed ones | Deliberate: the aggregates never reference each other by identifier, so the pattern would prevent a mix-up that cannot happen here | Introduce strongly-typed ids when one aggregate starts referencing another by id |
+| The controller reads through `IContentRepository` instead of a service layer | Deliberate: a service would forward to the repository and do nothing else, and a module that vanishes under the deletion test is a pass-through | Introduce `IContentService` together with the admin panel's first write use case, where orchestration and validation exist |
 
 ## Known problems
 
@@ -133,8 +144,8 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
   user is missing and `UsersService.Login` throws on a wrong password, so a failed sign-in would
   become a 500 instead of a 401 once the endpoints are reachable. The Result pattern the rules
   require is not adopted.
-- **There is no schema and no migration.** The application cannot create its tables, so nothing
-  runs against a fresh database.
+- **There is no seed data.** The schema exists and the endpoints serve it, but the profile and the
+  projects are empty, so the page renders nothing until content is written.
 
 ## What is deliberately absent
 
