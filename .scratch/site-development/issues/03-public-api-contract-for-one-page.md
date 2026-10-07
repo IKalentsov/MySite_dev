@@ -172,3 +172,25 @@ dotnet build MySite.slnx -m:1 -p:NuGetAudit=false
 Тесты — три прямых прогона собранных сборок (контур пуст до тикета 06):
 `MySite.UnitTests`, `MySite.ArchitectureTests`, `MySite.IntegrationTests` → `Total: 0`, код
 возврата 0 у каждого.
+
+### Правка после второго замечания: readiness-проба больше не знает контекст
+
+**Замечание владельца:** в `MySite.Web` не должно быть интеграции с `MySiteDbContext`; доступ к
+базе — через абстракцию, реализация — в инфраструктуре.
+
+**Решение: `fix`.** `PostgresHealthCheck` в Web больше не зависит от контекста:
+
+| Файл | Изменение |
+|---|---|
+| `MySite.Application/Health/IDatabaseProbe.cs` | **Новый.** Абстракция «база отвечает?» — объявлена в Application |
+| `MySite.Infrastructure.Postgres/Persistence/PostgresDatabaseProbe.cs` | **Новый.** Реализация через `MySiteDbContext` — в инфраструктуре |
+| `MySite.Infrastructure.Postgres/DependencyInjectionExtension.cs` | Регистрация пробы рядом с репозиторием |
+| `MySite.Web/HealthChecks/PostgresHealthCheck.cs` | Зависит от `IDatabaseProbe`, а не от `MySiteDbContext` |
+| `ARCHITECTURE.md` | Строка про `/health/ready` описывает, через что идёт проба |
+
+Наблюдаемое поведение `/health/ready` не изменилось: тот же `CanConnectAsync`, тот же текст
+`Unhealthy`, то же имя проверки в отчёте (`postgres`) и тот же тег (`ready`) — теги и маршруты
+остались в Web, как решил тикет 19. Новых пакетов нет: `IHealthCheck` живёт в Web (там его даёт
+ASP.NET Core), Infrastructure работает только с EF Core, который у неё уже есть.
+
+После правки `MySiteDbContext` не упоминается в `MySite.Web` нигде.
