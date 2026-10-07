@@ -89,7 +89,9 @@ locale is left out rather than rendered empty.
 
 Every response carries an `X-Correlation-Id`, taken from the request when the caller sent one and
 generated otherwise, and every error is an RFC 7807 problem document. `/health/live` answers
-whether the process is up; `/health/ready` answers whether the database can be reached.
+whether the process is up; `/health/ready` answers whether the database can be reached — through
+`IDatabaseProbe`, which `Application` declares and `Infrastructure.Postgres` implements, so `Web`
+never touches the context.
 
 ## Content model
 

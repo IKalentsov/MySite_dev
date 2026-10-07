@@ -1,18 +1,18 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using MySite.Infrastructure.Postgres.Persistence;
+using MySite.Application.Health;
 
 namespace MySite.Web.HealthChecks;
 
 /// <summary>Reports whether the site can reach its database.</summary>
 public sealed class PostgresHealthCheck : IHealthCheck
 {
-    private readonly MySiteDbContext _context;
+    private readonly IDatabaseProbe _database;
 
     /// <summary>Creates the check.</summary>
-    /// <param name="context">The context whose connection is probed.</param>
-    public PostgresHealthCheck(MySiteDbContext context)
+    /// <param name="database">Probes the database through the abstraction the application declares.</param>
+    public PostgresHealthCheck(IDatabaseProbe database)
     {
-        _context = context;
+        _database = database;
     }
 
     /// <summary>Asks the database whether it accepts a connection.</summary>
@@ -25,7 +25,7 @@ public sealed class PostgresHealthCheck : IHealthCheck
     {
         try
         {
-            return await _context.Database.CanConnectAsync(cancellationToken)
+            return await _database.CanConnectAsync(cancellationToken)
                 ? HealthCheckResult.Healthy()
                 : HealthCheckResult.Unhealthy("The database refused a connection.");
         }
