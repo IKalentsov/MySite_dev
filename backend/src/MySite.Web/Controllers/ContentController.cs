@@ -10,6 +10,9 @@ namespace MySite.Web.Controllers;
 [Route("api/v1")]
 public sealed class ContentController : ControllerBase
 {
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 100;
+
     private readonly IContentRepository _content;
 
     /// <summary>Creates the controller.</summary>
@@ -19,6 +22,37 @@ public sealed class ContentController : ControllerBase
         _content = content;
     }
 
+    /// <summary>Returns the combined home page content: profile and projects.</summary>
+    /// <param name="locale">
+    /// The locale to answer in: <c>ru</c> or <c>en</c>. Defaults to <c>ru</c>.
+    /// </param>
+    /// <param name="cursor">Keyset cursor for projects pagination (format: <c>{year}:{id}</c>).</param>
+    /// <param name="pageSize">Number of projects per page (default 20, max 100).</param>
+    /// <param name="cancellationToken">Cancels the read when the caller disconnects.</param>
+    /// <response code="200">The home page content.</response>
+    /// <response code="400">Invalid locale or pagination parameters.</response>
+    [HttpGet("home")]
+    [ProducesResponseType<HomeResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<HomeResponse>> GetHome(
+        [FromQuery] string? locale,
+        [FromQuery] string? cursor,
+        [FromQuery] int pageSize,
+        CancellationToken cancellationToken)
+    {
+        if (!TryResolveLocale(locale, out var resolved))
+        {
+            return UnknownLocale(locale);
+        }
+
+        pageSize = ClampPageSize(pageSize);
+
+        var profile = await BuildProfileAsync(resolved, cancellationToken);
+        var projects = await BuildPaginatedProjectsAsync(resolved, cursor, pageSize, cancellationToken);
+
+        return Ok(new HomeResponse(profile, projects));
+    }
+
     /// <summary>Returns the owner's "about me" text.</summary>
     /// <param name="locale">
     /// The locale to answer in: <c>ru</c> or <c>en</c>. Defaults to <c>ru</c>. When the text has no
@@ -26,14 +60,12 @@ public sealed class ContentController : ControllerBase
     /// echoes the locale it actually came from.
     /// </param>
     /// <param name="cancellationToken">Cancels the read when the caller disconnects.</param>
-    /// <response code="200">The profile text.</response>
+    /// <response code="200">The profile text (or null when not yet written).</response>
     /// <response code="400">The locale is not one the site publishes.</response>
-    /// <response code="404">No profile has been written yet.</response>
     [HttpGet("profile")]
-    [ProducesResponseType<OwnerProfileResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(OwnerProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OwnerProfileResponse>> GetProfile(
+    public async Task<ActionResult<OwnerProfileResponse?>> GetProfile(
         [FromQuery] string? locale,
         CancellationToken cancellationToken)
     {
@@ -42,33 +74,26 @@ public sealed class ContentController : ControllerBase
             return UnknownLocale(locale);
         }
 
-        var profile = await _content.GetProfileAsync(cancellationToken);
-        var translation = profile?.TranslationFor(resolved);
-
-        if (translation is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(new OwnerProfileResponse(
-            translation.Locale.Value,
-            translation.Headline,
-            translation.About));
+        return await BuildProfileAsync(resolved, cancellationToken);
     }
 
-    /// <summary>Returns the published projects.</summary>
+    /// <summary>Returns the published projects with keyset pagination.</summary>
     /// <param name="locale">
     /// The locale to answer in: <c>ru</c> or <c>en</c>. Defaults to <c>ru</c>. A project whose text
     /// is missing in the requested locale falls back to the default locale's text.
     /// </param>
+    /// <param name="cursor">Keyset cursor for pagination (format: <c>{year}:{id}</c>).</param>
+    /// <param name="pageSize">Number of projects per page (default 20, max 100).</param>
     /// <param name="cancellationToken">Cancels the read when the caller disconnects.</param>
-    /// <response code="200">The projects, empty when none are published.</response>
-    /// <response code="400">The locale is not one the site publishes.</response>
+    /// <response code="200">The paginated projects list.</response>
+    /// <response code="400">Invalid locale or pagination parameters.</response>
     [HttpGet("projects")]
-    [ProducesResponseType<ProjectListResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PaginatedProjectsResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ProjectListResponse>> GetProjects(
+    public async Task<ActionResult<PaginatedProjectsResponse>> GetProjects(
         [FromQuery] string? locale,
+        [FromQuery] string? cursor,
+        [FromQuery] int pageSize,
         CancellationToken cancellationToken)
     {
         if (!TryResolveLocale(locale, out var resolved))
@@ -76,15 +101,48 @@ public sealed class ContentController : ControllerBase
             return UnknownLocale(locale);
         }
 
-        var projects = await _content.GetPublishedProjectsAsync(cancellationToken);
+        pageSize = ClampPageSize(pageSize);
+
+        return await BuildPaginatedProjectsAsync(resolved, cursor, pageSize, cancellationToken);
+    }
+
+    private async Task<OwnerProfileResponse?> BuildProfileAsync(
+        Locale locale, CancellationToken cancellationToken)
+    {
+        var profile = await _content.GetProfileAsync(cancellationToken);
+        var translation = profile?.TranslationFor(locale);
+
+        if (translation is null)
+        {
+            return null;
+        }
+
+        return new OwnerProfileResponse(
+            translation.Locale.Value,
+            translation.Headline,
+            translation.About);
+    }
+
+    private async Task<PaginatedProjectsResponse> BuildPaginatedProjectsAsync(
+        Locale locale, string? cursor, int pageSize, CancellationToken cancellationToken)
+    {
+        var projects = await _content.GetPublishedProjectsAsync(cursor, pageSize, cancellationToken);
+
+        // Determine hasMore and nextCursor from raw objects before filtering by translation.
+        var hasMore = projects.Count > pageSize;
+        var displayProjects = hasMore ? projects.Take(pageSize).ToList() : [.. projects];
 
         // A project with no text in any locale is not shown: there would be nothing to render.
-        var published = projects
-            .Select(project => Map(project, resolved))
+        var mapped = displayProjects
+            .Select(project => Map(project, locale))
             .OfType<ProjectResponse>()
             .ToList();
 
-        return Ok(new ProjectListResponse(published));
+        var nextCursor = hasMore && mapped.Count > 0
+            ? EncodeCursor(displayProjects[mapped.Count - 1])
+            : null;
+
+        return new PaginatedProjectsResponse(mapped, nextCursor, hasMore);
     }
 
     private static ProjectResponse? Map(Project project, Locale locale)
@@ -102,6 +160,11 @@ public sealed class ContentController : ControllerBase
                     .ToList(),
                 project.Link,
                 project.Year);
+    }
+
+    private static string? EncodeCursor(Project project)
+    {
+        return $"{project.Year}:{project.Id}";
     }
 
     private static bool TryResolveLocale(string? value, out Locale locale)
@@ -131,5 +194,15 @@ public sealed class ContentController : ControllerBase
             $"Unknown locale '{locale}'. Supported locales: {supported}.");
 
         return ValidationProblem(ModelState);
+    }
+
+    private static int ClampPageSize(int value)
+    {
+        if (value <= 0)
+        {
+            return DefaultPageSize;
+        }
+
+        return Math.Min(value, MaxPageSize);
     }
 }

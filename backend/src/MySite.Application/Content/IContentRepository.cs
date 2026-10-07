@@ -10,5 +10,6 @@ public interface IContentRepository
 {
     Task<OwnerProfile?> GetProfileAsync(CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Project>> GetPublishedProjectsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<Project>> GetPublishedProjectsAsync(
+        string? cursor, int pageSize, CancellationToken cancellationToken);
 }

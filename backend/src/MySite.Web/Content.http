@@ -1,19 +1,31 @@
 @baseUrl = http://localhost:5054
 
-### The profile in the default locale (Russian)
+### Home: combined profile + projects (default locale)
+GET {{baseUrl}}/api/v1/home
+
+### Home: combined profile + projects in English
+GET {{baseUrl}}/api/v1/home?locale=en
+
+### Home: with keyset pagination cursor
+GET {{baseUrl}}/api/v1/home?cursor=2024:00000000-0000-0000-0000-000000000000&pageSize=5
+
+### Profile in the default locale (Russian)
 GET {{baseUrl}}/api/v1/profile
 
-### The profile in English
+### Profile in English
 GET {{baseUrl}}/api/v1/profile?locale=en
 
 ### An unsupported locale — 400, with the list of supported locales
 GET {{baseUrl}}/api/v1/profile?locale=de
 
-### The published projects, in the default locale
+### Published projects, in the default locale
 GET {{baseUrl}}/api/v1/projects
 
-### The published projects in English
+### Published projects in English
 GET {{baseUrl}}/api/v1/projects?locale=en
+
+### Projects with keyset pagination
+GET {{baseUrl}}/api/v1/projects?cursor=2024:00000000-0000-0000-0000-000000000000&pageSize=5
 
 ### Liveness: the process is up
 GET {{baseUrl}}/health/live
