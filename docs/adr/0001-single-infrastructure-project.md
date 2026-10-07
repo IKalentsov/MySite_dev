@@ -1,5 +1,8 @@
 # One infrastructure project holds both data access and identity adapters
 
+_Superseded by [ADR-0006](0006-identity-stack-removed.md): the identity stack was removed entirely,
+so there are no identity adapters left to locate inside this project._
+
 `MySite.Infrastructure.Postgres` contains the EF Core context, its configurations and the
 repositories — and also `JwtProvider`, `PasswordHasher` and `JwtOptions`, which have nothing to do
 with PostgreSQL. The harness rules say `Infrastructure.*` is "split by technology", so the name
