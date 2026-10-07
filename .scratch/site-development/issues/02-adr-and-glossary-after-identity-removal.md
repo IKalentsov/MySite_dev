@@ -1,7 +1,7 @@
 # 02 — Записать удаление identity и привести документы в соответствие с репозиторием
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: —
 
 ## Question
@@ -128,4 +128,29 @@ this codebase at all»; добавлена ссылка на ADR-0006.
 git grep -n -i -E 'JwtProvider|PasswordHasher|UsersService|UserController|BCrypt|JwtBearer|LoginUserRequest|RegisterUserRequest' ':!.scratch/'
 ```
 
-находит совпадения только в `docs/adr/` (история, допустимо). Status: resolved
+находит совпадения только в `docs/adr/` (история, допустимо).
+
+### Проверка и закрытие (планер)
+
+**Ветка `docs/02-documents-truth-up`, коммит `91570ed` — проверен и принят.** Критерий выполнен: 6
+совпадений, все в `docs/adr/`. Сборка воспроизведена: `dotnet build MySite.slnx -m:1` → 0
+предупреждений, 0 ошибок. Содержание документов сверено с кодом, а не только с текстом задания:
+DI-расширения, `UseSnakeCaseNamingConvention()`, плейсхолдер строки подключения, состав таблиц
+миграции `20261006231005_ContentSchema`, отсутствие таблицы `users` — всё сходится.
+
+**Два расхождения, найденные проверкой:**
+
+1. `ARCHITECTURE.md` § Current shape of the code называл два response DTO, тогда как в
+   `MySite.Contracts/Content/` их три (`OwnerProfileResponse`, `ProjectResponse`,
+   `ProjectListResponse`).
+2. `.dsh/AGENTS.md` § Project facts в строке `First phase` ссылался на ADR-0003 как на живое
+   основание, хотя этот же тикет пометил ADR-0003 отменённым.
+
+Оба исправлены в том же заходе, коммит `b0cd124` (ветка `docs/02-documents-truth-up`) — путь `fix`
+по дисциплине ревью, `.dsh/AGENT-TASKS.md` § 12. Отдельного тикета-доработки не требуется.
+
+**Не вошло и не должно:** пункт 6 задания (правки в `.dsh/AGENTS.md`, § Project facts и
+§ Open questions) — правит планер; строка про JWT/BCrypt и два пункта про users/JWT в § Later
+отсутствовали на момент проверки, то есть на момент написания задания уже были убраны.
+
+Status: resolved
