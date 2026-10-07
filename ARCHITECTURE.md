@@ -68,9 +68,9 @@ the Postgres project) with domain entities in between. The identity chain (user 
 service, and their adapters) was removed in ticket 01.
 
 The domain holds content entities — `OwnerProfile`, `Project`, their translations, and stack items —
-plus the `Locale` value object and the `IAuditable` interface. `Contracts` holds two response DTOs,
-`OwnerProfileResponse` and `ProjectResponse`. The Postgres project persists entities through
-`MySiteDbContext` with per-entity configurations discovered by assembly scanning.
+plus the `Locale` value object and the `IAuditable` interface. `Contracts` holds the response DTOs —
+`OwnerProfileResponse`, `ProjectResponse` and `ProjectListResponse`. The Postgres project persists
+entities through `MySiteDbContext` with per-entity configurations discovered by assembly scanning.
 
 Composition lives in layer-specific DI extensions: `AddProgramDependencies` (the entry point called
 from `Program.cs`) chains `AddWebDependencies` and `AddInfrastructure`; `Program.cs` itself

@@ -54,4 +54,78 @@ codebase at all» — авторизации в коде нет. Правка м
 
 ## Answer
 
-<!-- заполняется при закрытии -->
+Выполнено. Ветка `docs/02-documents-truth-up`, коммит `91570ed`.
+
+### Что сделано
+
+**Новый ADR:** `docs/adr/0006-identity-stack-removed.md` — зафиксировано решение удалить
+identity-стек целиком, что отменяет ADR-0003 (код, который нужно было хранить «спящим», больше не
+существует), и описывает условие возвращения авторизации (первый write-сценарий админки).
+
+**Устаревшие ADR:** в начало `0001-single-infrastructure-project.md` и
+`0003-public-site-first-phase.md` добавлена одна строка о том, что запись устарела, со ссылкой на
+ADR-0006. Текст не переписан.
+
+**ADR-0002:** последствия исправлены — миграция сгенерирована (`20261006231005_ContentSchema`),
+`snake_case` настроен через `EFCore.NamingConventions`.
+
+**ARCHITECTURE.md:**
+- Удалена строка Auth из таблицы стека; в Data добавлен `EFCore.NamingConventions` v10.0.1.
+- Переписан § Current shape of the code: нет use case'ов для пользователей, DI-композиция через
+  расширения по слоям (`AddProgramDependencies` → `AddWebDependencies` + `AddInfrastructure`),
+  `Program.cs` — только конвейер; health checks разведены тегами.
+- Удалена ссылка на таблицу `users` в § Content model.
+- Из Known deviations удалены 4 строки: JWT-адаптеры в Postgres-проекте, snake_case не настроен,
+  login как GET с телом, фабрики возвращают кортеж. Остались 3 актуальные (Result<T> для контента,
+  plain Guid, IContentRepository без service layer).
+- Из Known problems удалены 2 строки: «Authentication is not wired» и «A failure is an exception,
+  not a result». Осталась одна: «There is no seed data».
+- В § What is deliberately absent переписан пункт про Authentication (кода нет, будет написан с
+  нуля), удалён пункт про `CONTEXT.md` (файл существует).
+
+**WORKFLOW.md:** строка «The account endpoints are still not reachable» заменена на описание
+плейсхолдера `ConnectionStrings:DefaultConnection` и проверки при старте.
+
+**README.md:** «the database schema does not exist yet» → схема создаётся миграцией.
+
+**CONTEXT.md:** из определения «Админка» убрана фраза «It is the reason authentication exists in
+this codebase at all»; добавлена ссылка на ADR-0006.
+
+**frontend/README.md:** стек Vite заменён на Next.js App Router + FSD согласно ADR-0004; убрano
+упоминание нерешённого стека и harness base.
+
+### Утверждения, удалённые как ложные
+
+1. **«snake_case ненастроен»** (ARCHITECTURE.md Known deviations) — настроен: `EFCore.NamingConventions`
+   в `Directory.Packages.props`, `UseSnakeCaseNamingConvention()` в `AddInfrastructure`, миграция
+   `project_translations` и `created_at_utc` используют snake_case.
+2. **`CONTEXT.md` не существует** (ARCHITECTURE.md What is deliberately absent) — файл есть и
+   наполнен терминами.
+3. **«the database schema does not exist yet»** (README.md) — схема создаётся миграцией
+   `20261006231005_ContentSchema`.
+4. **Mиграций нет** (ADR-0002 Consequences) — миграция есть и применяется.
+5. **`snake_case` не настроен** (ADR-0002 Consequences) — настроен через `EFCore.NamingConventions`.
+6. **«Authentication is not wired»** (ARCHITECTURE.md Known problems) — кода идентичности больше нет,
+   вопрос снят.
+7. **«A failure is an exception, not a result»** (ARCHITECTURE.md Known problems) — относится к
+   удалённому `UsersRepository`/`UsersService`.
+
+### Файлы, сознательно не тронутые
+
+- **`docs/adr/0001-single-infrastructure-project.md`** и **`docs/adr/0003-public-site-first-phase.md`** —
+  основной текст оставлен как история; добавлена только одна строка устаревания в начало.
+- **`.dsh/AGENTS.md`** (§ Project facts, § Open questions) — правит планер, не исполнитель.
+- **`.scratch/`** — каталог задач и промптов принадлежит планеру.
+
+### Расхождения документ ↔ код, не вошедшие в задачу
+
+Нет: все найденные расхождения учтены и исправлены в рамках этого тикета. Сборка чистая:
+`dotnet build MySite.slnx -m:1` → 0 предупреждений, 0 ошибок.
+
+### Критерий готовности
+
+```
+git grep -n -i -E 'JwtProvider|PasswordHasher|UsersService|UserController|BCrypt|JwtBearer|LoginUserRequest|RegisterUserRequest' ':!.scratch/'
+```
+
+находит совпадения только в `docs/adr/` (история, допустимо). Status: resolved
