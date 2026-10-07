@@ -1,7 +1,7 @@
 # 03 — Контракт публичного API для одной страницы
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Как работать с этой задачей
 
@@ -57,4 +57,52 @@ Status: open
 
 ## Answer
 
-<!-- заполняется при закрытии -->
+### Решения (design tree, подтверждены владельцем)
+
+**Q1 — Один запрос или два:** Один эндпоинт `GET /api/v1/home` с составным ответом `{ profile, projects }`. Убирает двойной round-trip при SSR, даёт странице один источник данных.
+
+**Q2 — Пагинация:** Keyset-пагинация на проектах. Сортировка `(year DESC, id DESC)`, курсор = строка `{year}:{id}`. Параметр `cursor` необязательный (первая страница без него), `pageSize` по умолчанию 20, максимум 100.
+
+**Q3 — Пустой профиль:** 200 OK с `profile: null` вместо 404. Отсутствие профиля — empty-состояние страницы, не ошибка сервера. Частичный успех (есть проекты, нет профиля) несовместим с 404 на всём ответе `/home`.
+
+**Q4 — Нет опубликованных проектов:** Подтверждено текущее поведение — пустой список `[]`, не ошибка.
+
+**Q5 — `locale` по умолчанию:** Оставлен необязательным, `ru` по умолчанию. Неизвестная локаль → 400 через `ValidationProblem`. Попадает в OpenAPI через `[ProducesResponseType]`.
+
+**Q6 — Поля ответа и контакты:** Telegram и почта — вне scope задачи (по решению владельца: «если постановка задачи запрещает, значит, мы не делаем»). Профиль остаётся с `headline` + `about`. Контакты будут добавлены отдельным заходом.
+
+**Q7 — Контакты и схема БД:** Отказ от новых полей профиля, так как задача запрещает трогать схему БД и миграции.
+
+**Q8 — Структура projects в home:** Обёртка `{ items, nextCursor, hasMore }` — одинаковая структура на `/home` и `/projects`, фронтенд не различает источник.
+
+**Q9 — Ключ пагинации:** Композитный `(year DESC, id DESC)`, курсор = `year:id`. Детерминированный порядок при одинаковых годах.
+
+### Что реализовано
+
+| Файл | Изменение |
+|---|---|
+| `backend/src/MySite.Contracts/Content/HomeResponse.cs` | **Новый.** DTO составного ответа: `{ Profile?, Projects }` |
+| `backend/src/MySite.Contracts/Content/PaginatedProjectsResponse.cs` | **Новый.** DTO пагинации: `{ Items, NextCursor?, HasMore }` |
+| `backend/src/MySite.Application/Content/IContentRepository.cs` | `GetPublishedProjectsAsync` получил параметры `cursor`, `pageSize` |
+| `backend/src/MySite.Infrastructure.Postgres/Persistence/Repositories/ContentRepository.cs` | Keyset-пагинация: парсинг курсора `{year}:{id}`, фильтр `(year, id) < cursor`, сортировка `(year DESC, id DESC)` |
+| `backend/src/MySite.Web/Controllers/ContentController.cs` | Новый `GET /api/v1/home`; `/profile` → 200 null вместо 404; `/projects` — keyset-пагинация с `cursor` и `pageSize` |
+| `backend/src/MySite.Web/Content.http` | Запросы к `/home`, пагинационные параметры для `/projects` |
+
+### Подтверждение готовности
+
+```
+dotnet build MySite.slnx -m:1 → Предупреждений: 0, Ошибок: 0
+```
+
+Тесты: все три проекта (UnitTests, ArchitectureTests, IntegrationTests) — пустые скелеты, запуск без ошибок.
+
+### Что осталось за рамками
+
+- **Telegram и почта владельца** — новые поля профиля потребуют миграции БД. Отложены до отдельного захода владельца.
+- **Запись отклонения от правила пагинации** — не требуется: пагинация реализована в полном соответствии с правилом проекта.
+- **Интеграционные тесты** нового эндпоинта `/home` — следующий шаг (тикет 06+).
+
+### Ветка и коммит
+
+Ветка: `feature/public-api-contract-for-one-page` от `develop`.
+Коммит: `545c92d` — `api: контракт публичного API для одной страницы — /home, keyset-пагинация, empty profile → 200`
