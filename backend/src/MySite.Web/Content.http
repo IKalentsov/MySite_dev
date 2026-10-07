@@ -27,6 +27,9 @@ GET {{baseUrl}}/api/v1/projects?locale=en
 ### Projects with keyset pagination
 GET {{baseUrl}}/api/v1/projects?cursor=2024:00000000-0000-0000-0000-000000000000&pageSize=5
 
+### A malformed cursor — 400, not a silent restart from the first page
+GET {{baseUrl}}/api/v1/projects?cursor=not-a-cursor
+
 ### Liveness: the process is up
 GET {{baseUrl}}/health/live
 

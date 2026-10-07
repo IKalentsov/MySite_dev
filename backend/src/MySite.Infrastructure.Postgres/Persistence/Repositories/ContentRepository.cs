@@ -1,4 +1,3 @@
-using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using MySite.Application.Content;
 using MySite.Domain.Content;
@@ -24,7 +23,7 @@ public class ContentRepository : IContentRepository
     }
 
     public async Task<IReadOnlyList<Project>> GetPublishedProjectsAsync(
-        string? cursor, int pageSize, CancellationToken cancellationToken)
+        ProjectCursor? cursor, int pageSize, CancellationToken cancellationToken)
     {
         var query = _context.Projects
             .AsNoTracking()
@@ -32,9 +31,12 @@ public class ContentRepository : IContentRepository
             .Include(project => project.Stack)
             .Where(project => project.IsPublished);
 
-        // Keyset filter: (year DESC, id DESC). Cursor encodes the last seen row.
-        if (cursor is not null && TryParseCursor(cursor, out var cursorYear, out var cursorId))
+        // Keyset filter: (year DESC, id DESC). The cursor is the last row the caller has seen.
+        if (cursor is not null)
         {
+            var cursorYear = cursor.Year;
+            var cursorId = cursor.Id;
+
             query = query.Where(
                 project =>
                     (project.Year < cursorYear)
@@ -49,21 +51,5 @@ public class ContentRepository : IContentRepository
             .ToListAsync(cancellationToken);
 
         return [.. projects];
-    }
-
-    private static bool TryParseCursor(string cursor, out int year, out Guid id)
-    {
-        var parts = cursor.Split(':', StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length != 2
-            || !int.TryParse(parts[0], CultureInfo.InvariantCulture, out year)
-            || !Guid.TryParse(parts[1], null, out id))
-        {
-            year = default;
-            id = Guid.Empty;
-            return false;
-        }
-
-        return true;
     }
 }

@@ -10,14 +10,11 @@ namespace MySite.Web.Controllers;
 [Route("api/v1")]
 public sealed class ContentController : ControllerBase
 {
-    private const int DefaultPageSize = 20;
-    private const int MaxPageSize = 100;
-
-    private readonly IContentRepository _content;
+    private readonly IContentService _content;
 
     /// <summary>Creates the controller.</summary>
-    /// <param name="content">Reads the site's published content.</param>
-    public ContentController(IContentRepository content)
+    /// <param name="content">Serves the content the public page shows.</param>
+    public ContentController(IContentService content)
     {
         _content = content;
     }
@@ -45,12 +42,12 @@ public sealed class ContentController : ControllerBase
             return UnknownLocale(locale);
         }
 
-        pageSize = ClampPageSize(pageSize);
+        if (!TryResolveCursor(cursor, out var parsed))
+        {
+            return InvalidCursor(cursor);
+        }
 
-        var profile = await BuildProfileAsync(resolved, cancellationToken);
-        var projects = await BuildPaginatedProjectsAsync(resolved, cursor, pageSize, cancellationToken);
-
-        return Ok(new HomeResponse(profile, projects));
+        return Ok(await _content.GetHomeAsync(resolved, parsed, pageSize, cancellationToken));
     }
 
     /// <summary>Returns the owner's "about me" text.</summary>
@@ -74,7 +71,7 @@ public sealed class ContentController : ControllerBase
             return UnknownLocale(locale);
         }
 
-        return await BuildProfileAsync(resolved, cancellationToken);
+        return Ok(await _content.GetProfileAsync(resolved, cancellationToken));
     }
 
     /// <summary>Returns the published projects with keyset pagination.</summary>
@@ -101,70 +98,12 @@ public sealed class ContentController : ControllerBase
             return UnknownLocale(locale);
         }
 
-        pageSize = ClampPageSize(pageSize);
-
-        return await BuildPaginatedProjectsAsync(resolved, cursor, pageSize, cancellationToken);
-    }
-
-    private async Task<OwnerProfileResponse?> BuildProfileAsync(
-        Locale locale, CancellationToken cancellationToken)
-    {
-        var profile = await _content.GetProfileAsync(cancellationToken);
-        var translation = profile?.TranslationFor(locale);
-
-        if (translation is null)
+        if (!TryResolveCursor(cursor, out var parsed))
         {
-            return null;
+            return InvalidCursor(cursor);
         }
 
-        return new OwnerProfileResponse(
-            translation.Locale.Value,
-            translation.Headline,
-            translation.About);
-    }
-
-    private async Task<PaginatedProjectsResponse> BuildPaginatedProjectsAsync(
-        Locale locale, string? cursor, int pageSize, CancellationToken cancellationToken)
-    {
-        var projects = await _content.GetPublishedProjectsAsync(cursor, pageSize, cancellationToken);
-
-        // Determine hasMore and nextCursor from raw objects before filtering by translation.
-        var hasMore = projects.Count > pageSize;
-        var displayProjects = hasMore ? projects.Take(pageSize).ToList() : [.. projects];
-
-        // A project with no text in any locale is not shown: there would be nothing to render.
-        var mapped = displayProjects
-            .Select(project => Map(project, locale))
-            .OfType<ProjectResponse>()
-            .ToList();
-
-        var nextCursor = hasMore && mapped.Count > 0
-            ? EncodeCursor(displayProjects[mapped.Count - 1])
-            : null;
-
-        return new PaginatedProjectsResponse(mapped, nextCursor, hasMore);
-    }
-
-    private static ProjectResponse? Map(Project project, Locale locale)
-    {
-        var translation = project.TranslationFor(locale);
-
-        return translation is null
-            ? null
-            : new ProjectResponse(
-                translation.Title,
-                translation.Summary,
-                project.Stack
-                    .OrderBy(item => item.Position)
-                    .Select(item => item.Name)
-                    .ToList(),
-                project.Link,
-                project.Year);
-    }
-
-    private static string? EncodeCursor(Project project)
-    {
-        return $"{project.Year}:{project.Id}";
+        return Ok(await _content.GetProjectsAsync(resolved, parsed, pageSize, cancellationToken));
     }
 
     private static bool TryResolveLocale(string? value, out Locale locale)
@@ -185,6 +124,17 @@ public sealed class ContentController : ControllerBase
         return false;
     }
 
+    private static bool TryResolveCursor(string? value, out ProjectCursor? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            cursor = null;
+            return true;
+        }
+
+        return ProjectCursor.TryParse(value, out cursor);
+    }
+
     private ActionResult UnknownLocale(string? locale)
     {
         var supported = string.Join(", ", Locale.All.Select(candidate => candidate.Value));
@@ -196,13 +146,12 @@ public sealed class ContentController : ControllerBase
         return ValidationProblem(ModelState);
     }
 
-    private static int ClampPageSize(int value)
+    private ActionResult InvalidCursor(string? cursor)
     {
-        if (value <= 0)
-        {
-            return DefaultPageSize;
-        }
+        ModelState.AddModelError(
+            nameof(cursor),
+            $"Invalid cursor '{cursor}'. Expected format: {{year}}:{{id}}.");
 
-        return Math.Min(value, MaxPageSize);
+        return ValidationProblem(ModelState);
     }
 }

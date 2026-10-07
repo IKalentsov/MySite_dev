@@ -48,23 +48,27 @@ Decisions that are hard to reverse are recorded in [`docs/adr/`](docs/adr/).
 
 ```
 MySite.Web ──▶ MySite.Infrastructure.Postgres ──▶ MySite.Application ──▶ MySite.Domain
-     │
-     └──▶ MySite.Contracts
+     │                                                  │
+     └───────────▶ MySite.Contracts ◀───────────────────┘
 ```
 
 - `Domain` references nothing. BCL only: no packages, no project references.
-- `Application` sees `Domain` and knows nothing about Postgres, HTTP or DI.
+- `Application` sees `Domain` and `Contracts`, and knows nothing about Postgres or HTTP.
 - `Infrastructure.Postgres` implements the abstractions `Application` declares.
 - `Contracts` holds only DTOs and references nothing; it is where the API's request and response
-  shapes live.
+  shapes live. The use cases answer in those shapes and `Web` serializes them, so both reference it.
 - `Web` is transport: controllers, DI composition, configuration. It is the only project that
-  references `Infrastructure.Postgres` and `Contracts`.
+  references `Infrastructure.Postgres`, and it is where the use cases' answers become HTTP
+  responses.
 - Tests point at production code; production code never points at tests.
 
 ## Current shape of the code
 
-The only use case is content delivery: `ContentController` → `IContentRepository` (implemented in
-the Postgres project) with domain entities in between. The identity chain (user controller, user
+The only use case is content delivery: `ContentController` → `IContentService` (`ContentService` in
+`Application`) → `IContentRepository` (implemented in the Postgres project) with domain entities in
+between. The controller resolves the request and turns the answer into an HTTP response; what the
+page contains — which projects are shown, which text they show, where the next page begins and how
+large a page may be — is decided in `ContentService`. The identity chain (user controller, user
 service, and their adapters) was removed in ticket 01.
 
 The domain holds content entities — `OwnerProfile`, `Project`, their translations, and stack items —
@@ -73,9 +77,9 @@ plus the `Locale` value object and the `IAuditable` interface. `Contracts` holds
 entities through `MySiteDbContext` with per-entity configurations discovered by assembly scanning.
 
 Composition lives in layer-specific DI extensions: `AddProgramDependencies` (the entry point called
-from `Program.cs`) chains `AddWebDependencies` and `AddInfrastructure`; `Program.cs` itself
-contains only the middleware pipeline, controller routing, and health check wiring. Health checks
-are split by tags — `/health/live` for liveness, `/health/ready` for readiness (Postgres reachability).
+from `Program.cs`) chains `AddApplication`, `AddWebDependencies` and `AddInfrastructure`;
+`Program.cs` itself contains only the middleware pipeline, controller routing, and health check
+wiring. Health checks are split by tags — `/health/live` for liveness, `/health/ready` for readiness (Postgres reachability).
 
 The public side is one controller. `ContentController` serves `GET /api/v1/profile` and
 `GET /api/v1/projects`, both taking an explicit `locale` query parameter — `ru` by default, `en`
@@ -127,7 +131,6 @@ thing to fill once the slices above it settle.
 |---|---|---|
 | The content entities have no `Result<T>` factories | Deliberate: they are read models with no expected business errors, so a result type would carry a failure that cannot happen. The pattern earns its place where failures exist | Introduce it together with the admin panel's first write use case |
 | The content entities use plain `Guid` identifiers, not strongly-typed ones | Deliberate: the aggregates never reference each other by identifier, so the pattern would prevent a mix-up that cannot happen here | Introduce strongly-typed ids when one aggregate starts referencing another by id |
-| The controller reads through `IContentRepository` instead of a service layer | Deliberate: a service would forward to the repository and do nothing else, and a module that vanishes under the deletion test is a pass-through | Introduce `IContentService` together with the admin panel's first write use case, where orchestration and validation exist |
 
 ## Known problems
 
@@ -136,6 +139,9 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
 
 - **There is no seed data.** The schema exists and the endpoints serve it, but the profile and the
   projects are empty, so the page renders nothing until content is written.
+- **A page can be shorter than `pageSize`.** A project with no text in the requested locale and
+  none in the default one is dropped after the page has been read, so the page size and `hasMore`
+  describe stored rows rather than shown ones. Moving that filter into the query would close it.
 
 ## What is deliberately absent
 
