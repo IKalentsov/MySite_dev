@@ -106,3 +106,52 @@ dotnet build MySite.slnx -m:1 → Предупреждений: 0, Ошибок:
 
 Ветка: `feature/public-api-contract-for-one-page` от `develop`.
 Коммит: `545c92d` — `api: контракт публичного API для одной страницы — /home, keyset-пагинация, empty profile → 200`
+
+### Правка после ревью: бизнес-логика контента уехала из контроллера в Application
+
+**Замечание владельца:** контроллер — не место для бизнес-логики; контроллер разрешает запрос и
+вызывает use case из `Application`, все решения живут там.
+
+**Решение: `fix`** — правка в ту же ветку, рамки тикета 03 не расширялись.
+
+| Файл | Изменение |
+|---|---|
+| `MySite.Application/Content/ContentService.cs` | **Новый.** Use case: какие проекты видимы, какой текст показывается, где начинается следующая страница, какой размер страницы допустим |
+| `MySite.Application/Content/IContentService.cs` | **Новый.** `GetHomeAsync`, `GetProfileAsync`, `GetProjectsAsync` |
+| `MySite.Application/Content/ProjectCursor.cs` | **Новый.** Единственный владелец формы курсора `{year}:{id}` — разбор и печать |
+| `MySite.Application/DependencyInjectionExtension.cs` | **Новый.** `AddApplication()` |
+| `MySite.Application/MySite.Application.csproj` | Ссылки на `MySite.Contracts` и `Microsoft.Extensions.DependencyInjection.Abstractions` |
+| `MySite.Application/Content/IContentRepository.cs` | Курсор — типизированный `ProjectCursor?`; контракт «pageSize + 1» описан в самом интерфейсе |
+| `MySite.Infrastructure.Postgres/.../ContentRepository.cs` | Разбор строки курсора удалён: курсор приходит разобранным, форма живёт в одном месте |
+| `MySite.Web/Controllers/ContentController.cs` | Усыхает до транспорта: разрешить локаль и курсор, вызвать use case, вернуть ответ |
+| `MySite.Web/DependencyInjectionExtension.cs` | `AddApplication()` в цепочке композиции |
+| `MySite.Web/Content.http` | Пример 400 на битый курсор |
+| `ARCHITECTURE.md` | Граф зависимостей, композиция, «Current shape», снята строка отклонения про сервис-слой, новый «Known problem» |
+
+Две правки внутри переносимого кода — обе меняют наблюдаемое поведение, поэтому названы явно:
+
+1. **Курсор указывал не на ту строку.** Было `displayProjects[mapped.Count - 1]`, где `mapped` —
+   список уже без невидимых проектов: если проект выпадал в середине страницы, следующая страница
+   возвращала проекты, которые вызывающий уже получил. Стало `page[^1]` — последняя прочитанная
+   строка страницы.
+2. **Битый курсор теперь 400.** Было: `?cursor=мусор` молча игнорировался и возвращал первую
+   страницу, хотя OpenAPI и `Content.http` обещали 400 на неверные параметры пагинации.
+
+Что осталось за рамками:
+
+- **Отбор по локали — по-прежнему в памяти и после нарезки страницы.** Так записано в домене:
+  `OwnerProfile.TranslationFor` прямо говорит, что правило fallback живёт здесь, а не в SQL.
+- **Следствие того же:** страница может быть короче `pageSize`, а `hasMore` описывает строки в
+  базе, а не показанные. Записано в `ARCHITECTURE.md` → «Known problems».
+- **Тестов нет** — контур тестов создаёт тикет 06. Извлечённый use case теперь тестируется юнитом
+  с подставленным `IContentRepository`, до правки логика была доступна только через HTTP и базу.
+
+**Владельцу:** граф зависимостей в `.dsh/AGENTS.md` описывает старое направление (`Application`
+не ссылается на `Contracts`). Этот файл правит планировщик, исполнитель его не трогал.
+
+### Ветка и коммит после правки
+
+Ветка та же: `feature/public-api-contract-for-one-page`.
+Коммит `fd56bcf` — `refactor: бизнес-логика контента в ContentService, контроллер — только транспорт`
+(11 файлов, +287/−112).
+Коммит `docs: отчёт по правке после ревью в тикете 03` — этот отчёт.
