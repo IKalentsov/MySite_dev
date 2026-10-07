@@ -1,5 +1,9 @@
 # The first phase is a public site without authentication
 
+_Superseded by [ADR-0006](0006-identity-stack-removed.md): the identity code that this ADR was
+about keeping dormant no longer exists; authentication will be written from scratch when the
+admin panel's first write scenario arrives._
+
 The site is being built locally, for its owner, and nothing about it is published yet. The first
 phase therefore ships with every page public: no sign-in, no per-request validation, no
 authorisation checks. Authentication arrives later, together with the administration panel the

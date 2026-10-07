@@ -127,7 +127,7 @@ backend/
 ├── Directory.Build.props      # TFM, analysers, TreatWarningsAsErrors
 ├── Directory.Packages.props   # every package version — here and nowhere else
 ├── .globalconfig              # analyser rule severities
-├── global.json                # SDK pinning
+├── global.json               # test runner mode
 ├── tools/                     # build scripts
 ├── src/<Product>.<Layer>/     # one project per layer
 └── tests/
@@ -330,7 +330,7 @@ What counts as a design mistake:
 | `Directory.Build.props` | TFM, `Nullable`, `ImplicitUsings`, analysers, `TreatWarningsAsErrors`, style rules at build time |
 | `Directory.Packages.props` | **Every** package version; `.csproj` files carry `<PackageReference>` without `Version` |
 | `.globalconfig` | Analyser rule severities (levels, not versions) |
-| `global.json` | SDK version pinning and the test runner mode |
+| `global.json` | The test runner mode. The SDK is not pinned here — `WORKFLOW.md` states the required SDK version (10.0.401) |
 | `.gitignore` | Build output and files holding real secrets |
 
 - **A package version is stated in exactly one place** — `Directory.Packages.props`. Editing a
@@ -364,7 +364,10 @@ What counts as a design mistake:
 - Without network access the NuGet audit turns into an error: restore runs with the audit
   disabled or from the local cache.
 - Packages missing from the cache are restored by the user; the agent builds without restore.
-- Running the application and its containers is the user's job; the agent builds and tests.
+- Running the containers and applying migrations to the **local** database is part of the executor's
+  job: `docker compose up -d`, `docker compose ps`, `pg_isready`, `dotnet ef database update`.
+  Pushing, merging, the live database and the deployment belong to the user. The exact commands and
+  the boundary are in `.dsh/AGENT-TASKS.md`.
 
 ## Frontend
 
@@ -586,7 +589,7 @@ facts below survive.
 | Copy | The site's text is written, not transcribed. The owner's own words are the source; what appears on the site is a proper text |
 | Visual design | Not started. The owner brings references later; until then the page has to read acceptably as plain text |
 | Languages | Russian first, English behind a switch. Public routes are `/[lang]/...`; each text is stored per locale in translation tables ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)) |
-| Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); JWT bearer + BCrypt; OpenAPI + Scalar |
+| Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); OpenAPI + Scalar |
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
 | Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
 | Package set and versions | stated once, in `backend/Directory.Packages.props`; no `.csproj` carries a `Version` |
@@ -596,9 +599,11 @@ facts below survive.
 | Vocabulary | `CONTEXT.md` |
 | Decisions | `docs/adr/` |
 | Research | `docs/research/` |
-| First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel ([ADR-0003](docs/adr/0003-public-site-first-phase.md)) |
+| First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel and will be written from scratch ([ADR-0006](docs/adr/0006-identity-stack-removed.md); [ADR-0003](docs/adr/0003-public-site-first-phase.md) is superseded) |
 | Planned | The administration panel and the visual design; both after the public page |
 | Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
+| Git protocol | One task, one branch off the current local `master`, named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch and **never pushes**: no `git push`, no force push, no merge into `master` or `develop`, no pull request. It also does not `git fetch`/`git pull`: GitHub over SSH is not reachable from this machine. Pushing and merging belong to the owner |
+| Working on a ticket | The standing contract every executor reads first is `.dsh/AGENT-TASKS.md`: branch, environment, the exact build/test/docker/migration commands, the boundary of the executor's job and the definition of done. Ticket files in `.scratch/site-development/issues/` carry the task itself and point at that contract; the `prompts/` folder is gone |
 
 ### Open questions
 
@@ -623,10 +628,8 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 - The administration panel: its screens, its content model, and what it may change.
 - The visual design, which waits on the owner's references.
-- Whether the existing users and JWT code becomes the panel's foundation or is replaced.
-- `Properties/launchSettings.json` still carries a JWT secret for the dormant account code. The
-  PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env` and
-  `appsettings.Development.json`.
+- The PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env`
+  and `appsettings.Development.json`.
 
 ## Build templates
 
