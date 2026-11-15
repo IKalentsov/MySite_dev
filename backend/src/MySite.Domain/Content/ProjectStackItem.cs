@@ -29,4 +29,11 @@ public class ProjectStackItem
 
     public static ProjectStackItem Create(Guid projectId, string name, int position) =>
         new(Guid.NewGuid(), projectId, name, position);
+
+    /// <summary>Updates the name of this stack item.</summary>
+    /// <param name="name">The new name for this stack item.</param>
+    public void Update(string name)
+    {
+        Name = name;
+    }
 }

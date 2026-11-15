@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using MySite.Application.Content;
+using MySite.Application.Content.Seeding;
 
 namespace MySite.Application;
 
@@ -14,6 +15,7 @@ public static class DependencyInjectionExtension
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IContentService, ContentService>();
+        services.AddScoped<ISeedContentService, SeedContentService>();
 
         return services;
     }

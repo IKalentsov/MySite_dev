@@ -37,4 +37,40 @@ public class OwnerProfile
     public OwnerProfileTranslation? TranslationFor(Locale locale) =>
         _translations.Find(translation => translation.Locale == locale)
         ?? _translations.Find(translation => translation.Locale == Locale.Default);
+
+    /// <summary>Replaces the profile's text for the given locales, in place where possible.</summary>
+    /// <param name="texts">The texts to converge to, keyed by locale.</param>
+    public void ReplaceTexts(IReadOnlyCollection<ProfileText> texts)
+    {
+        ArgumentNullException.ThrowIfNull(texts);
+
+        var textsByLocale = texts.ToDictionary(t => t.Locale);
+
+        foreach (var translation in _translations.ToList())
+        {
+            if (textsByLocale.TryGetValue(translation.Locale, out var newText))
+            {
+                translation.Update(newText.Headline, newText.About);
+            }
+            else
+            {
+                _translations.Remove(translation);
+            }
+        }
+
+        foreach (var (locale, text) in textsByLocale)
+        {
+            if (_translations.All(t => t.Locale != locale))
+            {
+                _translations.Add(OwnerProfileTranslation.Create(Id, locale, text.Headline, text.About));
+            }
+        }
+    }
+
+    /// <summary>Records that the profile changed.</summary>
+    /// <param name="updatedAtUtc">The moment of this update, recorded as UTC.</param>
+    public void MarkUpdated(DateTime updatedAtUtc)
+    {
+        UpdatedAtUtc = updatedAtUtc;
+    }
 }

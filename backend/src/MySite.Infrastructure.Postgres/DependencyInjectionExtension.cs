@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MySite.Application.Content;
+using MySite.Application.Content.Seeding;
 using MySite.Application.Health;
 using MySite.Infrastructure.Postgres.Persistence;
 using MySite.Infrastructure.Postgres.Persistence.Repositories;
@@ -42,6 +43,7 @@ public static class DependencyInjectionExtension
             .UseSnakeCaseNamingConvention());
 
         services.AddScoped<IContentRepository, ContentRepository>();
+        services.AddScoped<IContentSeedWriter, ContentSeedWriter>();
         services.AddScoped<IDatabaseProbe, PostgresDatabaseProbe>();
 
         return services;
