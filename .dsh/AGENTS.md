@@ -6,7 +6,8 @@ open questions — live in the "Project facts" section at the end, which a re-ru
 deployment preserves.
 
 ```
-Harness base: IKalentsov/Harness @ 38dace02a4d6bc339f56867007a667eee48ff92c, adopted 2026-10-07
+Harness base: IKalentsov/Harness @ 1bc318fa07a7f9cf17f74cafe571687bde32ddc0, adopted 2026-10-07,
+updated 2026-11-15
 ```
 
 ## Priority when this file and the repository disagree
@@ -43,6 +44,13 @@ matching that catalog against the task. The library is large; the matching is th
   an instruction that names the skill's file by path (`.dsh/skills/<name>/SKILL.md`) can. An
   instruction that names a user-invoked skill by bare name alone does nothing.
 - **One skill per task.** A second skill is a separate task.
+- **A skill is reached by naming the tool, not by dropping a name.** `Call the Skill tool with
+  "grilling"` is the convention since the 1.3 release of the vendored set; on DSH that tool is
+  `skill`. A step that needs two skills is two calls, not one call carrying two names.
+- **A skill never calls a user-invoked skill.** Nothing but the person who types `/name` can
+  reach one, so the vendored text routes that case to the human ("tell the user to run
+  `/setup-matt-pocock-skills`"). A project may still reach one by pointer, as the bullet above
+  says — but that is this base's DSH-specific deviation, not something a skill may do.
 
 DSH reads exactly one level (`skills/<name>/SKILL.md`) and loads a skill in two steps: the
 `description` (with `whenToUse` when the skill has one) enters the session catalog, and only the
@@ -57,17 +65,18 @@ The flag is upstream frontmatter and is not edited here.
 
 | Section | Skills | User-invoked | Model-invoked |
 |---|---|---|---|
-| `shared/skills` | 26 | 14 | 12 |
+| `shared/skills` | 29 | 16 | 13 |
 | `backend/skills` | 4 | 0 | 4 |
 | `frontend/skills` | 16 | 4 | 12 |
-| **total** | **46** | **18** | **28** |
+| **total** | **49** | **20** | **29** |
 
-- **User-invoked in `shared` (14 of 26):** `ask-matt`, `grill-me`, `grill-with-docs`, `handoff`,
-  `implement`, `improve-codebase-architecture`, `setup-matt-pocock-skills`, `teach`,
-  `to-questionnaire`, `to-spec`, `to-tickets`, `triage`, `wait-what`, `wayfinder`.
-- **Model-invoked in `shared` (12):** `architecture-drift-check`, `codebase-design`,
-  `code-review`, `diagnosing-bugs`, `domain-modeling`, `grilling`, `karpathy-guidelines`,
-  `prototype`, `research`, `resolving-merge-conflicts`, `tdd`, `writing-for-agents`.
+- **User-invoked in `shared` (16 of 29):** `ask-matt`, `grill-me`, `grill-with-docs`, `handoff`,
+  `implement`, `implement-spec`, `improve-codebase-architecture`, `retro`,
+  `setup-matt-pocock-skills`, `teach`, `to-questionnaire`, `to-spec`, `to-tickets`, `triage`,
+  `wait-what`, `wayfinder`.
+- **Model-invoked in `shared` (13):** `architecture-drift-check`, `codebase-design`,
+  `code-review`, `diagnosing-bugs`, `domain-modeling`, `grilling`, `karpathy-guidelines`, `pr`,
+  `prototype`, `research`, `tdd`, `wizard`, `writing-for-agents`.
 - **`backend` hides nothing:** all 4 are model-invoked — `dotnet-webapi`,
   `optimizing-ef-core-queries`, `analyzing-dotnet-performance`,
   `create-datadriven-aspnetcore`. The four SQL Server skills the base ships were removed on the
@@ -78,6 +87,9 @@ The flag is upstream frontmatter and is not edited here.
   `better-interface`, `better-layout`, `better-typography`, `better-ui`, `better-writing`,
   `composition-patterns`, `react-best-practices`, `react-view-transitions`,
   `web-design-guidelines`, `writing-guidelines`.
+
+`resolving-merge-conflicts` was dropped with the base update: upstream deleted it in its 1.3
+release and the base followed, so no skill routes to it any more.
 
 A section of forty skills costs forty short lines until one of them is used.
 
@@ -581,7 +593,7 @@ facts below survive.
 | Fact | Value |
 |---|---|
 | Sections adopted | `shared`, `backend`, `frontend` |
-| Skills installed | 46, flat in `.dsh/skills`. The four `sqlserver-*` skills were removed on the owner's decision: the database is PostgreSQL, not SQL Server |
+| Skills installed | 49, flat in `.dsh/skills`. The four `sqlserver-*` skills were removed on the owner's decision: the database is PostgreSQL, not SQL Server |
 | The site | The personal site of Илья Каленцов — a .NET developer of more than eight years, with Angular on the frontend. This site is his first React project, built to learn the stack |
 | First screen | One page: an "about me" block, then a list of the owner's projects |
 | Content | Lives in PostgreSQL and is edited through the administration panel; the API is what serves it to the site |
@@ -596,13 +608,13 @@ facts below survive.
 | Database | PostgreSQL in Docker via `backend/docker-compose.yml`, published on `localhost:5433`; credentials in the untracked `backend/.env`; the schema is one generated migration |
 | Commands | `WORKFLOW.md` |
 | Architecture | `ARCHITECTURE.md` |
-| Vocabulary | `CONTEXT.md` |
+| Vocabulary | `GLOSSARY.md` |
 | Decisions | `docs/adr/` |
 | Research | `docs/research/` |
 | First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel and will be written from scratch ([ADR-0006](docs/adr/0006-identity-stack-removed.md); [ADR-0003](docs/adr/0003-public-site-first-phase.md) is superseded) |
 | Planned | The administration panel and the visual design; both after the public page |
 | Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
-| Git protocol | One task, one branch off the current local `master`, named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch and **never pushes**: no `git push`, no force push, no merge into `master` or `develop`, no pull request. It also does not `git fetch`/`git pull`: GitHub over SSH is not reachable from this machine. Pushing and merging belong to the owner |
+| Git protocol | One task, one branch off the current local **`develop`** (the working branch; `master` lags behind and is not used as a base), named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch and **never pushes**: no `git push`, no force push, no merge into `master` or `develop`, no pull request. It also does not `git fetch`/`git pull`: GitHub over SSH is not reachable from this machine. Pushing and merging belong to the owner |
 | Working on a ticket | The standing contract every executor reads first is `.dsh/AGENT-TASKS.md`: branch, environment, the exact build/test/docker/migration commands, the boundary of the executor's job and the definition of done. Ticket files in `.scratch/site-development/issues/` carry the task itself and point at that contract; the `prompts/` folder is gone |
 
 ### Open questions

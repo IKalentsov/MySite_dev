@@ -34,7 +34,8 @@ PostgreSQL, одна публичная страница на Next.js читае
 
 **Как задача выдаётся исполнителю.**
 
-- Каждая задача — своя ветка от актуального локального `master`, имя **`feature/<slug>`**, где
+- Каждая задача — своя ветка от актуального локального **`develop`** (рабочая ветка проекта;
+  `master` отстаёт и базой не служит), имя **`feature/<slug>`**, где
   `<slug>` — имя файла тикета без номера и расширения. Это правило записано и в `.dsh/AGENTS.md`,
   § Project facts, строка `Git protocol`, и в стоячем контракте `.dsh/AGENT-TASKS.md`, чтобы его не
   приходилось повторять вслух.
@@ -93,6 +94,12 @@ PostgreSQL, одна публичная страница на Next.js читае
   удалены 15 файлов и оба JWT-пакета, миграция перегенерирована (`20261006231005`, таблицы `users`
   больше нет), `IContentRepository` и `IAuditable` на месте; сборка 0/0, `.globalconfig` не
   тронут. Ветка `chore/remove-identity-stack`, коммит `9105f91`, не запушена.
+- [02 — Записать удаление identity и привести документы в соответствие](issues/02-adr-and-glossary-after-identity-removal.md):
+  новый ADR-0006 (identity-стек удалён целиком, ADR-0003 отменён, авторизация вернётся с первым
+  write-сценарием админки), ADR-0001 и ADR-0003 помечены устаревшими по одной строке, починены
+  `ARCHITECTURE.md`, `WORKFLOW.md`, `README.md`, `CONTEXT.md`, `docs/adr/0002`, `frontend/README.md`;
+  тикет 05 поглощён. Ветка `docs/02-documents-truth-up`, коммиты `91570ed` и `b0cd124` (стоячий
+  контракт и правки по проверке), не запушены. Проверено: критерий `git grep` выполнен, сборка 0/0.
 - [09 — Стек фронтенда и точные версии](issues/09-frontend-stack-and-versions.md): пины `next`
   16.4.0, `react`/`react-dom` 19.3.0, **`typescript` 6.0.3** (не `latest` 7.0.2 —
   `typescript-eslint` держит `<6.1.0`), `tailwindcss` 4.3.3, `eslint` 10.12.0; `transpilePackages`

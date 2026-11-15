@@ -1,4 +1,4 @@
-# CONTEXT.md
+# GLOSSARY.md
 
 The project's vocabulary. A glossary and nothing else: no implementation notes, no spec, no
 scratch pad. A term appears here once it has been settled in conversation, never in advance.
