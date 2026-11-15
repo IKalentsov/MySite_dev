@@ -15,7 +15,7 @@ more content can follow without being rebuilt from scratch.
 | `.dsh/` | Agent instructions and the skills that go with them |
 | `ARCHITECTURE.md` | The stack, the projects and the direction dependencies may point |
 | `WORKFLOW.md` | Build, test and run commands, and what "done" means |
-| `CONTEXT.md` | The project's vocabulary |
+| `GLOSSARY.md` | The project's vocabulary |
 | `docs/adr/` | Decisions that are hard to reverse, and why |
 
 ## Building and running

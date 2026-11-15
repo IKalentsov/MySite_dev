@@ -2,14 +2,15 @@
 
 - **Repository:** [mattpocock/skills](https://github.com/mattpocock/skills)
 - **Path in the repository:** `skills/productivity/teach`
-- **Branch:** `main`, commit `c55ee46073ed923f86ce59a5eb3b6d895095d1b7` (2026-09-18)
-- **Version:** `1.2.3` in the `package.json` of that commit; the commit sits on `main` after
-  the `v1.2.3` tag, which points at a different tree
-- **Retrieved:** 2026-09-21
+- **Branch:** `main`, tag `v1.3.1`, commit `24fe0ef7737efae15c87225755e9f6f5965e4888` (2026-10-04)
+- **Version:** `1.3.1` in `package.json` and `.claude-plugin/plugin.json` at that
+  commit. The tag points at this commit, so the pin is a release rather than a point
+  past one.
+- **Retrieved:** 2026-10-23
 - **Licence:** MIT (the `LICENSE` file in the repository root)
-- **Retrieval method:** folder copied from the repository tarball, without `.git`
-- **Integrity:** per-file SHA-256 of the whole set is in `../SOURCES.json`; `../verify-set.cmd`
-  re-checks it
+- **Retrieval method:** folder copied from the release tarball, without `.git`
+- **Integrity:** per-file SHA-256 of the whole set is in `../SOURCES.json`;
+  `../verify-set.cmd` re-checks it
 
 ## Files
 
