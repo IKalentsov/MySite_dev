@@ -258,6 +258,9 @@ src/shared/deep.ts(1,24): error TS2307: Cannot find module '@mysite/ui/component
 (после `git fetch origin`, `git switch develop`, `git merge --ff-only origin/develop`; хеши
 `develop` и `origin/develop` совпали). Коммиты: `6d7bb34856e8fea86b692f0cd7c75ae19692162d`
 (скаффолд, гейты, CI, документация) и docs-коммит, закрывающий этот тикет, — в той же ветке.
+PR в `develop`: https://github.com/IKalentsov/MySite_dev/pull/15. CI фронтенда
+(`.github/workflows/frontend.yml`): https://github.com/IKalentsov/MySite_dev/actions/runs/43776656354 —
+install, lint, typecheck и build зелёные.
 
 ### За рамками и вопросы владельцу
 
