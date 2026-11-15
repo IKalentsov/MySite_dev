@@ -127,15 +127,41 @@ to `""`) causes a startup exception if no real value is provided — see the inf
 
 ## Frontend
 
-**There is no frontend yet.** `frontend/` holds a README and nothing else, so there are no frontend
-commands in this file. They are written here by ticket 14
-(`.scratch/site-development/issues/14-frontend-scaffold-and-gates.md`), together with the workspace
-itself, and the toolchain is decided in tickets 09, 10 and 17.
+Run from `frontend/`:
 
-The three commands the gates are expected to be named after — `pnpm lint`, `pnpm typecheck`,
-`pnpm build`, all from `frontend/` — are **not written down as a decision here**: an executor that
-needs them before ticket 14 is done must not invent them. Ticket 14 writes the real commands into
-this section as part of its definition of done.
+```powershell
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+The workspace is a pnpm monorepo: `apps/web` (Next.js App Router) and the packages
+`ui`, `api-client`, `shared`, `eslint-config`, `tsconfig`. Versions are stated once, in the
+`catalog:` of `frontend/pnpm-workspace.yaml`; every `package.json` references `catalog:` and never
+repeats a range. Node 24 or newer and pnpm 12.9.1 are expected (`engines.node`,
+`devEngines.packageManager`), and the lockfile is `frontend/pnpm-lock.yaml`.
+
+| Command | What it checks |
+|---|---|
+| `pnpm lint` | ESLint 10 flat config: typed linting (`parserOptions.projectService`), FSD layer and slice boundaries (`eslint-plugin-boundaries` plus `import/no-restricted-paths`), deep `@mysite/ui/*` imports, and no conflict with Prettier (`eslint-config-prettier/flat`). Runs without `--cache` |
+| `pnpm typecheck` | `next typegen` and `tsc --noEmit` in every workspace package |
+| `pnpm build` | `next build` for `apps/web`; it also type-checks the routes and writes the production bundle |
+
+`pnpm format` rewrites files with Prettier 3.9.9 and `pnpm format:check` reports instead of writing.
+Formatting is not a gate of its own: ESLint only turns off the rules Prettier owns.
+
+The Git hook is installed by `pnpm install`: `frontend/scripts/setup-git-hooks.mjs` points
+`core.hooksPath` at `frontend/.githooks`, and its `pre-commit` runs lefthook with
+`frontend/lefthook.yml`. Lint runs on the staged files; `tsc --noEmit` runs over the whole project
+whenever a `.ts`/`.tsx` file is staged. The project-wide type check is deliberate — TypeScript
+ignores `tsconfig.json` when files are passed on the command line — and `--cache` is deliberately
+absent so typed and boundary rules do not reuse stale results (ticket 10). Lefthook looks for its
+config at the Git root, which is the repository root, not `frontend/`; the committed hook therefore
+passes `LEFTHOOK_CONFIG` explicitly instead of relying on `lefthook install`.
+
+CI is `.github/workflows/frontend.yml`: pinned pnpm 12.9.1 and Node 24.18.0, then
+`pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm typecheck` → `pnpm build`.
 
 ## Definition of done
 
@@ -149,8 +175,9 @@ this section as part of its definition of done.
    the suppression and it is recorded in the registry below.
 5. Documentation reflects the change: `ARCHITECTURE.md` when the structure, a contract or the
    stack moved; `.dsh/AGENTS.md` when a project fact changed.
-6. For frontend work, the gates named in the Frontend section above pass with no errors and no
-   warnings, and the four mandatory screen states are implemented where a screen reads data.
+6. For frontend work, `pnpm lint`, `pnpm typecheck` and `pnpm build` from `frontend/` pass with no
+   errors and no warnings, and the four mandatory screen states are implemented where a screen reads
+   data.
 
 The executor's side of this list — including the docker and migration commands and the exact
 report format — is `.dsh/AGENT-TASKS.md`.

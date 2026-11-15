@@ -1,0 +1,18 @@
+# One root config for the frontend monorepo (ticket 10 chose lefthook over
+# lint-staged because lint-staged's per-package configs do not merge).
+#
+# The types job runs `tsc --noEmit` over the whole project, not over the staged
+# files: TypeScript ignores tsconfig.json when input files are passed, so a
+# changed-files check would either drop the project configuration or miss
+# cross-file breakage (ticket 10). The glob only decides *whether* to run it.
+pre-commit:
+  parallel: false
+  jobs:
+    - name: lint
+      root: "frontend/"
+      glob: "*.{js,mjs,cjs,ts,tsx}"
+      run: pnpm exec eslint --max-warnings=0 {staged_files}
+    - name: typecheck
+      root: "frontend/"
+      glob: "*.{ts,tsx}"
+      run: pnpm typecheck

@@ -1,0 +1,32 @@
+{
+  "name": "mysite-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.9.1",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @mysite/web dev",
+    "build": "pnpm --filter @mysite/web build",
+    "lint": "eslint .",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "node scripts/setup-git-hooks.mjs"
+  },
+  "devDependencies": {
+    "@mysite/eslint-config": "workspace:*",
+    "eslint": "catalog:",
+    "lefthook": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  }
+}
