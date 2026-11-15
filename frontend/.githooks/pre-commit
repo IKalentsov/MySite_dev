@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root/frontend"
+
+LEFTHOOK_CONFIG="$root/frontend/lefthook.yml" exec ./node_modules/.bin/lefthook run pre-commit "$@"

@@ -1,0 +1,57 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+catalog:
+  "@eslint/js": "10.0.1"
+  "@radix-ui/react-slot": "1.5.0"
+  "@tailwindcss/postcss": "4.3.3"
+  "@types/node": "24.19.2"
+  "@types/react": "19.3.0"
+  "@types/react-dom": "19.3.0"
+  "class-variance-authority": "0.7.1"
+  "clsx": "2.1.1"
+  "eslint": "10.12.0"
+  "eslint-config-prettier": "10.1.8"
+  "eslint-import-resolver-typescript": "4.4.5"
+  "eslint-plugin-boundaries": "7.4.4"
+  "eslint-plugin-import": "2.32.0"
+  "globals": "17.14.0"
+  "lefthook": "2.1.17"
+  "next": "16.4.0"
+  "next-themes": "0.4.6"
+  "prettier": "3.9.9"
+  "react": "19.3.0"
+  "react-dom": "19.3.0"
+  "shadcn": "4.21.3"
+  "tailwind-merge": "3.7.0"
+  "tailwindcss": "4.3.3"
+  "typescript": "6.0.3"
+  "typescript-eslint": "8.71.1"
+
+# pnpm 12 names the build-script allow-list `allowBuilds` (it replaced the
+# `onlyBuiltDependencies` array that lefthook's install page still documents).
+# lefthook's own postinstall runs `lefthook install` from the Git root and
+# cannot discover this config, which lives in frontend/ (see
+# frontend/scripts/setup-git-hooks.mjs). The build is denied and the hook is
+# wired by that script instead, so an install never drops a stray lefthook.yml
+# at the repository root. Flip it to true only if the config ever moves there.
+allowBuilds:
+  lefthook: false
+
+# Written by pnpm 12's supply-chain policy on the first install: these four
+# packages were published inside the default release-age window, so pnpm
+# recorded them as explicit exclusions. Removing the block makes the next
+# install re-add it; the lockfile keeps the exact versions.
+minimumReleaseAgeExclude:
+  - "@boundaries/config@1.0.3"
+  - "@boundaries/elements@3.3.4"
+  - "@boundaries/policies@1.0.3"
+  - eslint-plugin-boundaries@7.4.4
+
+# eslint-plugin-import@2.32.0 stops its ESLint peer range at ^9, while the
+# project runs ESLint 10. The rule this project needs from it
+# (import/no-restricted-paths) works on 10; ticket 14 records the decision.
+peerDependencyRules:
+  allowedVersions:
+    "eslint-plugin-import>eslint": "10"

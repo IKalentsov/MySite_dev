@@ -15,9 +15,13 @@ Last updated: 2026-11-16.
 | API docs | `Microsoft.AspNetCore.OpenApi` + Scalar | 10.0.12 / 2.17.14 |
 | Tests | xunit v3, AwesomeAssertions, NSubstitute, ArchUnitNET | 4.0.1 / 9.6.0 / 6.2.0 / 0.13.4 |
 | Analysers | Roslynator, Meziantou, AsyncFixer, SonarAnalyzer | 5.0.1 / 3.0.294 / 2.1.0 / 10.35.0.4138 |
+| Frontend build | Next.js (App Router), React, TypeScript | 16.4.0 / 19.3.0 / 6.0.3 |
+| Frontend UI | Tailwind CSS 4, shadcn/ui copied into `packages/ui` | 4.3.3 |
+| Frontend quality | ESLint 10 + typescript-eslint, Prettier, lefthook | 10.12.0 / 8.71.1 / 3.9.9 / 2.1.17 |
 
-Versions are stated once, in `backend/Directory.Packages.props`. No `.csproj` carries a
-`Version`, and nothing floats.
+Backend versions are stated once, in `backend/Directory.Packages.props`. No `.csproj` carries a
+`Version`, and nothing floats. Frontend versions are stated once, in the `catalog:` of
+`frontend/pnpm-workspace.yaml`; every `package.json` references `catalog:`.
 
 ## Projects
 
@@ -43,6 +47,29 @@ backend/
     └── MySite.ArchitectureTests/  dependency direction and naming rules, as executable checks
 ```
 
+```
+frontend/
+├── pnpm-workspace.yaml          catalog: every version, plus workspace settings
+├── package.json                 root scripts and the pnpm/Node pins
+├── eslint.config.mjs            the root flat config
+├── lefthook.yml                 pre-commit: lint on staged files, types over the project
+├── .githooks/pre-commit         the hook Git runs; lefthook needs its config path passed in
+├── apps/web/                    the Next.js App Router app
+│   └── src/
+│       ├── app/                 routes, providers, globals.css, [lang] layout and page
+│       ├── _pages/              FSD pages: one screen per slice
+│       ├── widgets/
+│       ├── features/
+│       ├── entities/
+│       └── shared/
+└── packages/
+    ├── ui/                      design system: tokens, styles, cn, components
+    ├── api-client/              skeleton; the generated client is tickets 11/15
+    ├── shared/                  skeleton for shared types and utilities
+    ├── eslint-config/           shared flat config: typed linting and FSD boundaries
+    └── tsconfig/                base, Next.js and React library tsconfigs
+```
+
 ## Dependency direction
 
 Decisions that are hard to reverse are recorded in [`docs/adr/`](docs/adr/).
@@ -62,6 +89,36 @@ MySite.Web ──▶ MySite.Infrastructure.Postgres ──▶ MySite.Application
   references `Infrastructure.Postgres`, and it is where the use cases' answers become HTTP
   responses.
 - Tests point at production code; production code never points at tests.
+
+## Frontend
+
+Frontend dependencies point down the Feature-Sliced Design ladder and into the workspace packages:
+
+```
+apps/web/src/app → _pages → widgets → features → entities → shared
+                                                              ↓
+                          packages/ui, packages/api-client, packages/shared
+```
+
+- `apps/web/src/app` is the App Router route tree and holds no FSD `app` layer of its own. The FSD
+  `pages` layer is `_pages`, because `src/pages` belongs to the Pages Router ([ticket 13](.scratch/site-development/issues/13-component-home-and-tokens.md)).
+- A layer imports only the layers below it; slices inside one layer do not import each other.
+  `packages/eslint-config` enforces this with `eslint-plugin-boundaries` and
+  `import/no-restricted-paths`, so the rule is a gate rather than a convention.
+- `packages/ui` is the design system: components, `cn`, tokens and styles. Its public API is
+  `src/index.ts` (explicit named exports) plus `src/styles/globals.css`; the `exports` map and ESLint
+  both reject deep imports.
+- Tokens and the light/dark semantic variables live in `packages/ui/src/styles/globals.css` under
+  Tailwind 4 `@theme`/`:root`/`.dark`, with `@custom-variant dark` and `@source` covering both
+  `packages/ui` and `apps/web/src`. `apps/web/src/app/globals.css` only imports Tailwind and that
+  file.
+- `/` redirects to `/ru`; `/[lang]` is the only route, and `<html lang>` comes from that segment.
+  The final route shape — status code, language switch, metadata — belongs to
+  [ticket 12](.scratch/site-development/issues/12-public-route-shape.md).
+- `packages/api-client` is a skeleton only: the generated client arrives in tickets 11/15 and is
+  never imported into the UI directly.
+- The gates are `pnpm lint`, `pnpm typecheck` and `pnpm build` from `frontend/`; the exact commands,
+  the hook and CI are in `WORKFLOW.md`.
 
 ## Current shape of the code
 
@@ -150,6 +207,10 @@ makes the direction in this document enforceable instead of advisory. Every rule
 `MySite.ArchitectureTests.NegativeFixture` — a deliberately broken assembly that must fail it —
 because a check that has never been seen to fail is not a check.
 
+The frontend's test contour is decided ([ticket 10](.scratch/site-development/issues/10-frontend-quality-and-test-contour.md):
+Vitest, React Testing Library, MSW and Playwright) but not installed in this change: the first
+tests land with tickets 15/16. The frontend gates that do exist are lint, typecheck and build.
+
 ## Known deviations from the harness rules
 
 | Deviation | Why it stands | What would close it |
@@ -174,6 +235,10 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
 - The administration panel: planned, not designed.
 - Localisation. Russian is the primary language and English is a switchable alternative; how the
   switch is expressed in routes and content is not decided.
-- Frontend code. `frontend/` is a reserved folder with a README; the stack is decided
-  ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) and the project is not
-  started, so nothing about it appears in the tables above.
+- The first screen and its data boundary. The frontend shell exists and its gates are green, but
+  the page is a placeholder: [ticket 16](.scratch/site-development/issues/16-the-page-itself.md)
+  builds it and [ticket 18](.scratch/site-development/issues/18-data-fetching-boundary.md) decides
+  where the data is fetched.
+- The generated API client. `packages/api-client` is a skeleton; tickets 11/15 generate it and wire
+  it to the UI.
+- Frontend tests. The runner and levels are chosen in ticket 10 but no test runner is installed yet.
