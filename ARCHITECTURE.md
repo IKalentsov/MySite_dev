@@ -38,9 +38,9 @@ backend/
 │   ├── MySite.Infrastructure.Postgres/   EF Core, configurations, repositories
 │   └── MySite.Web/                       controllers, DI composition, appsettings
 └── tests/
-    ├── MySite.UnitTests/          empty skeleton
-    ├── MySite.IntegrationTests/   empty skeleton
-    └── MySite.ArchitectureTests/  empty skeleton
+    ├── MySite.UnitTests/          domain rules, the seed pipeline, the locale fallback
+    ├── MySite.IntegrationTests/   the seed command against a real PostgreSQL container
+    └── MySite.ArchitectureTests/  dependency direction and naming rules, as executable checks
 ```
 
 ## Dependency direction
@@ -85,7 +85,7 @@ never deleted ([ADR-0007](docs/adr/0007-content-seeding-through-a-command.md)).
 
 The domain holds content entities — `OwnerProfile`, `Project`, their translations, and stack items —
 plus the `Locale` value object and the `IAuditable` interface. `Contracts` holds the response DTOs —
-`OwnerProfileResponse`, `ProjectResponse` and `ProjectListResponse`. The Postgres project persists
+`OwnerProfileResponse`, `ProjectResponse` and `PaginatedProjectsResponse`. The Postgres project persists
 entities through `MySiteDbContext` with per-entity configurations discovered by assembly scanning.
 
 Composition lives in layer-specific DI extensions: `AddProgramDependencies` (the entry point called
@@ -133,19 +133,22 @@ The schema is created by the project's only migration, generated with `dotnet ef
 
 ## Testing
 
-Three levels, one project each. The unit project holds the first tests — the seed pipeline
-(`SeedContentService` against a substituted writer) and the shipped content file; the integration
-and architecture projects are still empty skeletons.
+Three levels, one project each. The unit project holds the domain rules, the seed pipeline
+(`SeedContentService` against a substituted writer), the locale fallback and the shipped content
+file. The integration project seeds through `SeedContentService` and `ContentSeedWriter` against a
+real PostgreSQL container started by Testcontainers, and checks convergence on a rerun. The
+architecture project turns the dependency direction above into executable checks.
 
 | Level | Project | What it checks |
 |---|---|---|
-| Unit | `MySite.UnitTests` | Domain rules and use cases with substituted dependencies; today the seed validator, the parser and the shipped content file |
-| Integration | `MySite.IntegrationTests` | HTTP through the application against a real PostgreSQL database, as the rules require — an in-memory provider is not a substitute |
-| Architecture | `MySite.ArchitectureTests` | The dependency direction above, as an executable check |
+| Unit | `MySite.UnitTests` | Domain rules, the seed validator and parser, the locale fallback and the shipped content file |
+| Integration | `MySite.IntegrationTests` | The seed path against a real PostgreSQL database, as the rules require — an in-memory provider is not a substitute |
+| Architecture | `MySite.ArchitectureTests` | The dependency direction above, the ban on `async void` and the naming conventions |
 
-The rules say a boundary without an executable check is a wish, so the architecture project is
-what makes the direction in this document enforceable instead of advisory — and it is the first
-thing to fill once the slices above it settle.
+The rules say a boundary without an executable check is a wish, so the architecture project is what
+makes the direction in this document enforceable instead of advisory. Every rule is also applied to
+`MySite.ArchitectureTests.NegativeFixture` — a deliberately broken assembly that must fail it —
+because a check that has never been seen to fail is not a check.
 
 ## Known deviations from the harness rules
 
@@ -174,4 +177,3 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
 - Frontend code. `frontend/` is a reserved folder with a README; the stack is decided
   ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) and the project is not
   started, so nothing about it appears in the tables above.
-- CI configuration.

@@ -20,7 +20,9 @@ more content can follow without being rebuilt from scratch.
 
 ## Building and running
 
-Commands are in `WORKFLOW.md`. Today the API builds clean, the unit test project covers the seed
-pipeline, and the integration and architecture test projects are still empty skeletons; the database
+Commands are in `WORKFLOW.md`. The API builds clean and `dotnet test MySite.slnx` is green: the unit
+project covers the domain rules, the seed pipeline and the locale fallback; the architecture project
+enforces the dependency direction and applies every rule to a deliberately broken fixture assembly;
+the integration project runs the seed command against a real PostgreSQL container. The database
 schema is created by a single migration, so the API can run against a fresh database once the
 connection string is set, and the frontend is not written.

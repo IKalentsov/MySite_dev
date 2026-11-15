@@ -8,9 +8,13 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\MySite.Domain\MySite.Domain.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Application\MySite.Application.csproj" />
+    <ProjectReference Include="..\..\src\MySite.Infrastructure.Postgres\MySite.Infrastructure.Postgres.csproj" />
     <ProjectReference Include="..\..\src\MySite.Web\MySite.Web.csproj" />
   </ItemGroup>
 

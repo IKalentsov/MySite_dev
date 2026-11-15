@@ -48,10 +48,12 @@ dotnet tests\MySite.IntegrationTests\bin\Debug\net10.0\MySite.IntegrationTests.d
 Both are correct; the direct run is what an executor uses because it gives exact numbers per project
 and does not depend on the solution-wide runner.
 
-**Today the three test projects are empty skeletons.** `dotnet test` then reports "zero tests" and
-**exits with code 8**; a direct assembly run exits 0 with `Total: 0`. The 8 is the runner's "nothing
-ran" code, not a failing test, and it goes away with the first test — after ticket 06 the criterion
-is a plain one: exit code 0 with tests actually passing.
+**All three test projects hold tests, and a run is green.** `dotnet test MySite.slnx` exits with code
+0 when every test passes: the unit project covers the domain rules, the seed pipeline and the locale
+fallback; the architecture project checks the dependency direction and the naming conventions, and
+runs each rule against a deliberately broken fixture assembly that must fail it; the integration
+project starts its own PostgreSQL container through Testcontainers, so Docker has to be running for
+the solution-wide run.
 
 ## Database
 
@@ -139,10 +141,9 @@ this section as part of its definition of done.
 
 1. For backend work, `dotnet build MySite.slnx` (inside the agent sandbox `dotnet build MySite.slnx
    -m:1`) is clean: no errors and no warnings.
-2. `dotnet test MySite.slnx` is green, including the pre-existing tests. While the three test
-   projects are still empty the runner reports "zero tests" and exits with code **8**; that is the
-   runner's "nothing ran" code, not a failing test. A task is not done on that code — the first real
-   tests arrive with ticket 06, and from then on done means exit code 0 with tests actually passing.
+2. `dotnet test MySite.slnx` is green — exit code 0 with tests actually passing — including the
+   pre-existing tests. The architecture rules are checked against their negative fixture assembly,
+   and the integration tests run against a real PostgreSQL container rather than an in-memory fake.
 3. New behaviour is covered at the matching level: unit, integration, architecture.
 4. No analyser is silenced to make the build pass. The finding is fixed, or the user decides on
    the suppression and it is recorded in the registry below.

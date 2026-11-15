@@ -22,8 +22,10 @@ A text file in the repository is read by a command and written to the database i
 
 - **The texts live in `backend/content/site-content.json`.** Content is data of the product, not of
   a project, so it does not sit inside `src/`. The path is passed on the command line and resolved
-  against the current directory, never against the Web project's content root — `dotnet run` would
-  otherwise look for it in `src/MySite.Web`. `backend/content/README.md` documents the shape.
+  against the current directory, never against the Web project's content root: `dotnet run` starts
+  the application with `src/MySite.Web` as its working directory, so from `backend/` the file is
+  passed as `../../content/site-content.json`, and an absolute path works as well.
+  `backend/content/README.md` documents the shape.
 - **The command is `dotnet run --project src/MySite.Web -- seed --file <path>`**, dispatched from
   `Program.cs` before the web host starts serving. It is not an endpoint and not a separate
   executable: it needs the same DI composition as the application, nothing more.
