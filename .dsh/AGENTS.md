@@ -118,17 +118,19 @@ literals.
 Clean Architecture, dependencies strictly inward:
 
 ```
-Web ──▶ Infrastructure.* ──▶ Core (Application) ──▶ Domain ◀── Contracts
+Web ──▶ Infrastructure.* ──▶ Core (Application) ──▶ Domain
+  └──────────────────▶ Contracts ◀──────────────────┘
 ```
 
 - `Domain` — entities, value objects, domain rules, invariants. BCL only: no packages, no
   references to other projects, no knowledge of a database, HTTP or DI.
-- `Core` / `Application` — use cases, validators, abstractions of the outside world. Knows
-  nothing about Infrastructure.
+- `Core` / `Application` — use cases, validators, abstractions of the outside world. Sees
+  `Domain` and `Contracts`; knows nothing about Infrastructure. The response shape is a
+  `Contracts` type, so the use case builds it and the controller only maps it to HTTP.
 - `Infrastructure.*` — implementations of those abstractions: database, cache, external APIs.
   Split by technology.
 - `Web` — transport: controllers, middleware, DI composition.
-- `Contracts` — outbound DTOs; may lean on domain types.
+- `Contracts` — outbound DTOs; references no project of its own, so nothing flows back inward.
 
 The direction is enforced by architecture tests, not by agreement.
 
@@ -378,8 +380,9 @@ What counts as a design mistake:
 - Packages missing from the cache are restored by the user; the agent builds without restore.
 - Running the containers and applying migrations to the **local** database is part of the executor's
   job: `docker compose up -d`, `docker compose ps`, `pg_isready`, `dotnet ef database update`.
-  Pushing, merging, the live database and the deployment belong to the user. The exact commands and
-  the boundary are in `.dsh/AGENT-TASKS.md`.
+  Pushing the task branch and opening its pull request are the executor's too. Merging that pull
+  request, the live database and the deployment belong to the user. The exact commands and the
+  boundary are in `.dsh/AGENT-TASKS.md`.
 
 ## Frontend
 
@@ -614,7 +617,7 @@ facts below survive.
 | First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel and will be written from scratch ([ADR-0006](docs/adr/0006-identity-stack-removed.md); [ADR-0003](docs/adr/0003-public-site-first-phase.md) is superseded) |
 | Planned | The administration panel and the visual design; both after the public page |
 | Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
-| Git protocol | One task, one branch off the current local **`develop`** (the working branch; `master` lags behind and is not used as a base), named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch and **never pushes**: no `git push`, no force push, no merge into `master` or `develop`, no pull request. It also does not `git fetch`/`git pull`: GitHub over SSH is not reachable from this machine. Pushing and merging belong to the owner |
+| Git protocol | **`master` and `develop` accept changes only through a pull request: a direct push to either branch is forbidden for everyone, the owner included.** One task, one branch off the current local **`develop`** (the working branch; `master` lags behind and is not used as a base), named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch, **pushes that branch and opens the pull request into `develop`** — that is how a finished task is handed over. An executor never pushes to `master` or `develop`, never force-pushes, never merges or rebases them, and never merges its own pull request: merging is the owner's act, and **a task counts as done only once its pull request is merged**. GitHub over SSH is reachable from this machine with the `~/.ssh/my_ssh` key. An executor keeps its base current before touching git: `git fetch origin`, fast-forward the local `develop` to `origin/develop`, and confirm both hashes match **before** creating the task branch — a branch never starts from a stale base. It never merges, rebases, resets or force-pushes a protected branch; a local `develop` that will not fast-forward is the owner's to resolve. A delegated worker that only edits code — a local model, for instance — is given no git at all: the delegating agent owns its branch, commit, push and pull request |
 | Working on a ticket | The standing contract every executor reads first is `.dsh/AGENT-TASKS.md`: branch, environment, the exact build/test/docker/migration commands, the boundary of the executor's job and the definition of done. Ticket files in `.scratch/site-development/issues/` carry the task itself and point at that contract; the `prompts/` folder is gone |
 
 ### Open questions

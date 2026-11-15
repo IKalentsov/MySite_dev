@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using MySite.Application;
 using MySite.Infrastructure.Postgres;
 using MySite.Web.HealthChecks;
 
@@ -18,7 +19,7 @@ public static class DependencyInjectionExtension
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.AddWebDependencies().AddInfrastructure(configuration);
+        services.AddApplication().AddWebDependencies().AddInfrastructure(configuration);
 
         return services;
     }
