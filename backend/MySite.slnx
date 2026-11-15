@@ -7,6 +7,7 @@
     <Project Path="src/MySite.Web/MySite.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/MySite.ArchitectureTests.NegativeFixture/MySite.ArchitectureTests.NegativeFixture.csproj" />
     <Project Path="tests/MySite.ArchitectureTests/MySite.ArchitectureTests.csproj" />
     <Project Path="tests/MySite.IntegrationTests/MySite.IntegrationTests.csproj" />
     <Project Path="tests/MySite.UnitTests/MySite.UnitTests.csproj" />
