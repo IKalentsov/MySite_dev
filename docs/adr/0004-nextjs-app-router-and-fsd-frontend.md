@@ -22,16 +22,25 @@ quality gates, the test levels — keeps its force. The half that named Vite, Re
 `apps/` monorepo, nuqs and Zustand has been rewritten for the App Router and FSD in
 `.dsh/AGENTS.md`.
 
-Two things the base never decided are now genuinely open, and they are marked as open questions in
+One thing the base never decided is still open, and it is marked as an open question in
 `.dsh/AGENTS.md` rather than guessed:
 
 - **Data fetching.** "A query library only" was a rule about a browser-only application. Server
   Components make server-side fetching, a query library and a mix all defensible, and the choice
-  shapes every screen.
-- **Where components live.** shadcn/ui copies components into the repository, which makes them
-  project code subject to the quality gates; whether they sit in the design system or inside the
-  FSD layers is open.
+  shapes every screen. This is [ticket 18](../../.scratch/site-development/issues/18-data-fetching-boundary.md).
 
-FSD names its top layer `app`, which collides with the App Router's `app/` directory. How the two
-are kept apart is a third open question; the answer changes every import path in the project, so
-it is worth settling before the first component is written.
+The component home and the `app` collision are settled (owner's decision, 2026-11-16,
+[ticket 13](../../.scratch/site-development/issues/13-component-home-and-tokens.md)):
+
+- **Components live in `packages/ui`.** shadcn/ui copies its components into the repository, so the
+  design system owns the primitives, `cn`, the tokens and the styles; app-specific composition
+  lives in the FSD layers of `apps/web`. `packages/ui` exposes only `src/index.ts` and
+  `src/styles/globals.css`; deep imports are blocked by the package's `exports` map and by ESLint.
+- **The App Router's `app/` directory is the composition root.** Routes live in
+  `apps/web/src/app/`; the FSD layers live in
+  `apps/web/src/{_pages,widgets,features,entities,shared}`. There is no separate FSD `app` layer,
+  and the FSD `pages` layer is `_pages`, because `src/pages` is the Pages Router directory.
+- **Tokens live in `packages/ui/src/styles/globals.css`** under Tailwind 4 `@theme`, with the
+  semantic variables in `:root`/`.dark`; the dark theme is `@custom-variant dark` plus
+  `next-themes`, as [ticket 09](../../.scratch/site-development/issues/09-frontend-stack-and-versions.md)
+  established.
