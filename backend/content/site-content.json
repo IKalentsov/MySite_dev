@@ -1,0 +1,80 @@
+{
+  "profile": {
+    "translations": {
+      "ru": {
+        "headline": "Заглушка: .NET-разработчик, восемь лет в промышленной разработке",
+        "about": "Заглушка: здесь будет текст «обо мне» из тикета 07 — словами владельца, а не машинным переводом. Пока в базе лежит временный текст: страница не должна быть пустой, а фронтенд должен строиться против живых данных."
+      },
+      "en": {
+        "headline": "Placeholder: .NET developer with eight years of production experience",
+        "about": "Placeholder: the \"about me\" text from ticket 07 will live here, in the owner's own words rather than machine translated. This is temporary content so the page is not empty and the frontend can be built against live data."
+      }
+    }
+  },
+  "projects": [
+    {
+      "link": "https://github.com/IKalentsov/SachkovTech/tree/master/DirectoryService",
+      "year": 2026,
+      "sortOrder": 1,
+      "isPublished": true,
+      "stack": [".NET 10", "ASP.NET Core", "PostgreSQL", "EF Core", "Dapper", "Docker"],
+      "translations": {
+        "ru": {
+          "title": "Заглушка: DirectoryService — управление структурой предприятия",
+          "summary": "Заглушка: сервис для отделов, локаций и должностей с древовидной структурой отделов и REST API на Clean Architecture. Временный текст, владелец заменит его в тикете 07."
+        },
+        "en": {
+          "title": "Placeholder: DirectoryService — company structure management",
+          "summary": "Placeholder: a service for departments, locations and positions, with a department tree and a REST API on Clean Architecture. Temporary text; the owner replaces it in ticket 07."
+        }
+      }
+    },
+    {
+      "link": "https://github.com/IKalentsov/MySite_dev",
+      "year": 2026,
+      "sortOrder": 2,
+      "isPublished": true,
+      "stack": [".NET 10", "ASP.NET Core", "EF Core", "PostgreSQL", "Next.js", "TypeScript"],
+      "translations": {
+        "ru": {
+          "title": "Заглушка: MySite — этот сайт",
+          "summary": "Заглушка: персональный сайт: страница «обо мне» и проекты, бэкенд на .NET 10 и PostgreSQL, фронтенд на Next.js. Временный текст, владелец заменит его в тикете 07."
+        },
+        "en": {
+          "title": "Placeholder: MySite — this site",
+          "summary": "Placeholder: a personal site with an about-me page and a list of projects, a .NET 10 and PostgreSQL backend, a Next.js frontend. Temporary text; the owner replaces it in ticket 07."
+        }
+      }
+    },
+    {
+      "link": "https://github.com/IKalentsov/Harness",
+      "year": 2026,
+      "sortOrder": 3,
+      "isPublished": true,
+      "stack": ["Markdown", "DeepSeek Harness", "AGENTS.md", "Skills"],
+      "translations": {
+        "ru": {
+          "title": "Заглушка: Harness — база для настройки агентной среды",
+          "summary": "Заглушка: набор правил, скиллов и шаблонов сборки, из которого собирается .dsh/ конкретного проекта. Английского перевода у этого проекта намеренно нет — на нём проверяется fallback на русский. Временный текст, владелец заменит его в тикете 07."
+        }
+      }
+    },
+    {
+      "link": "https://github.com/IKalentsov/Keycloak_Learn",
+      "year": 2025,
+      "sortOrder": 4,
+      "isPublished": false,
+      "stack": ["Keycloak", "ASP.NET Core", "Docker", "OAuth 2.0"],
+      "translations": {
+        "ru": {
+          "title": "Заглушка: Keycloak_Learn — учебный проект по авторизации",
+          "summary": "Заглушка: демонстрация базовой аутентификации и авторизации пользователя на Keycloak. Проект снят с публикации и не должен попадать в выдачу."
+        },
+        "en": {
+          "title": "Placeholder: Keycloak_Learn — an authentication learning project",
+          "summary": "Placeholder: a demonstration of basic user authentication and authorisation with Keycloak. The project is unpublished and must not appear in the list."
+        }
+      }
+    }
+  ]
+}

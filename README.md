@@ -20,6 +20,7 @@ more content can follow without being rebuilt from scratch.
 
 ## Building and running
 
-Commands are in `WORKFLOW.md`. Today the API builds clean and its three test projects are empty
-skeletons; the database schema is created by a single migration, so the API can run against a fresh
-database once the connection string is set, and the frontend is not written.
+Commands are in `WORKFLOW.md`. Today the API builds clean, the unit test project covers the seed
+pipeline, and the integration and architecture test projects are still empty skeletons; the database
+schema is created by a single migration, so the API can run against a fresh database once the
+connection string is set, and the frontend is not written.

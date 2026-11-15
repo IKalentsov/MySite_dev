@@ -3,7 +3,7 @@
 How this system is built: the stack, the projects, and the direction dependencies are allowed to
 point. Product decisions — what the site does, its pages, its domain — do not live here.
 
-Last updated: 2026-10-07.
+Last updated: 2026-11-16.
 
 ## Stack
 
@@ -30,6 +30,7 @@ backend/
 ├── .gitignore                   build output and files holding real secrets
 ├── global.json                  test runner mode
 ├── docker-compose.yml           PostgreSQL for local development
+├── content/                     the content file the seed command reads, and its README
 ├── src/
 │   ├── MySite.Domain/                    entities, value objects, domain rules
 │   ├── MySite.Application/               use cases and the abstractions of the outside world
@@ -64,12 +65,23 @@ MySite.Web ──▶ MySite.Infrastructure.Postgres ──▶ MySite.Application
 
 ## Current shape of the code
 
-The only use case is content delivery: `ContentController` → `IContentService` (`ContentService` in
+The first use case is content delivery: `ContentController` → `IContentService` (`ContentService` in
 `Application`) → `IContentRepository` (implemented in the Postgres project) with domain entities in
 between. The controller resolves the request and turns the answer into an HTTP response; what the
 page contains — which projects are shown, which text they show, where the next page begins and how
 large a page may be — is decided in `ContentService`. The identity chain (user controller, user
 service, and their adapters) was removed in ticket 01.
+
+The second use case is content seeding, and it is deliberately not an HTTP one. `Program.cs`
+dispatches the `seed` verb before the web host starts serving: it reads the file named by `--file`,
+resolves `ISeedContentService`, and turns the result into an exit code (`0` seeded, `1` invalid
+input, `2` database failure). `SeedContentService` (in `Application`) parses and validates the JSON —
+`ContentSeedParser` and `ContentSeedValidator` are pure functions with no I/O, no clock and no
+database — and hands a `ContentSeedPlan` to `IContentSeedWriter`, which `Infrastructure.Postgres`
+implements as one transaction: the profile is created when the table is empty and updated in place
+otherwise, each project is matched by its `link`, its translation rows become exactly the file's
+locales and its stack exactly the file's list, and projects absent from the file are reported but
+never deleted ([ADR-0007](docs/adr/0007-content-seeding-through-a-command.md)).
 
 The domain holds content entities — `OwnerProfile`, `Project`, their translations, and stack items —
 plus the `Locale` value object and the `IAuditable` interface. `Contracts` holds the response DTOs —
@@ -111,15 +123,23 @@ Reads go through `IContentRepository`, which the Application layer owns and the 
 implements. Every read is untracked, and the locale is resolved by `TranslationFor(locale)` on the
 entity: the requested locale first, the default locale's text second, nothing third.
 
+The content itself lives in `backend/content/site-content.json` and reaches the tables through the
+seed command, never through a migration and never through the API: content is data of the product,
+so it is edited as a reviewed file and written by a command that converges on rerun. A locale key
+the file omits is the deliberate "untranslated" state — no row is written, and `TranslationFor`
+answers with the default language's text. `backend/content/README.md` documents the file's shape.
+
 The schema is created by the project's only migration, generated with `dotnet ef migrations add`.
 
 ## Testing
 
-Three levels, one project each, and all three are empty skeletons: no test has been written yet.
+Three levels, one project each. The unit project holds the first tests — the seed pipeline
+(`SeedContentService` against a substituted writer) and the shipped content file; the integration
+and architecture projects are still empty skeletons.
 
-| Level | Project | What it will check |
+| Level | Project | What it checks |
 |---|---|---|
-| Unit | `MySite.UnitTests` | Domain rules and use cases with substituted dependencies |
+| Unit | `MySite.UnitTests` | Domain rules and use cases with substituted dependencies; today the seed validator, the parser and the shipped content file |
 | Integration | `MySite.IntegrationTests` | HTTP through the application against a real PostgreSQL database, as the rules require — an in-memory provider is not a substitute |
 | Architecture | `MySite.ArchitectureTests` | The dependency direction above, as an executable check |
 
@@ -139,8 +159,6 @@ thing to fill once the slices above it settle.
 Live findings about the system. A resolved finding leaves the list rather than being marked closed.
 Product and process questions are not here; they live in `.dsh/AGENTS.md`.
 
-- **There is no seed data.** The schema exists and the endpoints serve it, but the profile and the
-  projects are empty, so the page renders nothing until content is written.
 - **A page can be shorter than `pageSize`.** A project with no text in the requested locale and
   none in the default one is dropped after the page has been read, so the page size and `hasMore`
   describe stored rows rather than shown ones. Moving that filter into the query would close it.

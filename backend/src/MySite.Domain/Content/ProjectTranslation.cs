@@ -29,4 +29,13 @@ public class ProjectTranslation
 
     public static ProjectTranslation Create(Guid projectId, Locale locale, string title, string summary) =>
         new(Guid.NewGuid(), projectId, locale, title, summary);
+
+    /// <summary>Updates the text content of this translation.</summary>
+    /// <param name="title">The translated title.</param>
+    /// <param name="summary">The translated summary.</param>
+    public void Update(string title, string summary)
+    {
+        Title = title;
+        Summary = summary;
+    }
 }

@@ -16,4 +16,8 @@
     <ProjectReference Include="..\..\src\MySite.Application\MySite.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\content\site-content.json" Link="content\site-content.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

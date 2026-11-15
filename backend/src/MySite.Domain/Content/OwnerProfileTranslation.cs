@@ -38,4 +38,13 @@ public class OwnerProfileTranslation
         string headline,
         string about) =>
         new(Guid.NewGuid(), ownerProfileId, locale, headline, about);
+
+    /// <summary>Updates the text content of this translation.</summary>
+    /// <param name="headline">The translated headline.</param>
+    /// <param name="about">The translated about text.</param>
+    public void Update(string headline, string about)
+    {
+        Headline = headline;
+        About = about;
+    }
 }
