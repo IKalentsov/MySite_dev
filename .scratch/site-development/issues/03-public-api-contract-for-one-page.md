@@ -1,7 +1,7 @@
 # 03 — Контракт публичного API для одной страницы
 
 Type: grilling
-Status: open
+Status: resolved
 
 ## Как работать с этой задачей
 
@@ -57,4 +57,140 @@ Status: open
 
 ## Answer
 
-<!-- заполняется при закрытии -->
+### Решения (design tree, подтверждены владельцем)
+
+**Q1 — Один запрос или два:** Один эндпоинт `GET /api/v1/home` с составным ответом `{ profile, projects }`. Убирает двойной round-trip при SSR, даёт странице один источник данных.
+
+**Q2 — Пагинация:** Keyset-пагинация на проектах. Сортировка `(year DESC, id DESC)`, курсор = строка `{year}:{id}`. Параметр `cursor` необязательный (первая страница без него), `pageSize` по умолчанию 20, максимум 100.
+
+**Q3 — Пустой профиль:** 200 OK с `profile: null` вместо 404. Отсутствие профиля — empty-состояние страницы, не ошибка сервера. Частичный успех (есть проекты, нет профиля) несовместим с 404 на всём ответе `/home`.
+
+**Q4 — Нет опубликованных проектов:** Подтверждено текущее поведение — пустой список `[]`, не ошибка.
+
+**Q5 — `locale` по умолчанию:** Оставлен необязательным, `ru` по умолчанию. Неизвестная локаль → 400 через `ValidationProblem`. Попадает в OpenAPI через `[ProducesResponseType]`.
+
+**Q6 — Поля ответа и контакты:** Telegram и почта — вне scope задачи (по решению владельца: «если постановка задачи запрещает, значит, мы не делаем»). Профиль остаётся с `headline` + `about`. Контакты будут добавлены отдельным заходом.
+
+**Q7 — Контакты и схема БД:** Отказ от новых полей профиля, так как задача запрещает трогать схему БД и миграции.
+
+**Q8 — Структура projects в home:** Обёртка `{ items, nextCursor, hasMore }` — одинаковая структура на `/home` и `/projects`, фронтенд не различает источник.
+
+**Q9 — Ключ пагинации:** Композитный `(year DESC, id DESC)`, курсор = `year:id`. Детерминированный порядок при одинаковых годах.
+
+### Что реализовано
+
+| Файл | Изменение |
+|---|---|
+| `backend/src/MySite.Contracts/Content/HomeResponse.cs` | **Новый.** DTO составного ответа: `{ Profile?, Projects }` |
+| `backend/src/MySite.Contracts/Content/PaginatedProjectsResponse.cs` | **Новый.** DTO пагинации: `{ Items, NextCursor?, HasMore }` |
+| `backend/src/MySite.Application/Content/IContentRepository.cs` | `GetPublishedProjectsAsync` получил параметры `cursor`, `pageSize` |
+| `backend/src/MySite.Infrastructure.Postgres/Persistence/Repositories/ContentRepository.cs` | Keyset-пагинация: парсинг курсора `{year}:{id}`, фильтр `(year, id) < cursor`, сортировка `(year DESC, id DESC)` |
+| `backend/src/MySite.Web/Controllers/ContentController.cs` | Новый `GET /api/v1/home`; `/profile` → 200 null вместо 404; `/projects` — keyset-пагинация с `cursor` и `pageSize` |
+| `backend/src/MySite.Web/Content.http` | Запросы к `/home`, пагинационные параметры для `/projects` |
+
+### Подтверждение готовности
+
+```
+dotnet build MySite.slnx -m:1 → Предупреждений: 0, Ошибок: 0
+```
+
+Тесты: все три проекта (UnitTests, ArchitectureTests, IntegrationTests) — пустые скелеты, запуск без ошибок.
+
+### Что осталось за рамками
+
+- **Telegram и почта владельца** — новые поля профиля потребуют миграции БД. Отложены до отдельного захода владельца.
+- **Запись отклонения от правила пагинации** — не требуется: пагинация реализована в полном соответствии с правилом проекта.
+- **Интеграционные тесты** нового эндпоинта `/home` — следующий шаг (тикет 06+).
+
+### Ветка и коммит
+
+Ветка: `feature/public-api-contract-for-one-page` от `develop`.
+Коммит: `545c92d` — `api: контракт публичного API для одной страницы — /home, keyset-пагинация, empty profile → 200`
+
+### Правка после ревью: бизнес-логика контента уехала из контроллера в Application
+
+**Замечание владельца:** контроллер — не место для бизнес-логики; контроллер разрешает запрос и
+вызывает use case из `Application`, все решения живут там.
+
+**Решение: `fix`** — правка в ту же ветку, рамки тикета 03 не расширялись.
+
+| Файл | Изменение |
+|---|---|
+| `MySite.Application/Content/ContentService.cs` | **Новый.** Use case: какие проекты видимы, какой текст показывается, где начинается следующая страница, какой размер страницы допустим |
+| `MySite.Application/Content/IContentService.cs` | **Новый.** `GetHomeAsync`, `GetProfileAsync`, `GetProjectsAsync` |
+| `MySite.Application/Content/ProjectCursor.cs` | **Новый.** Единственный владелец формы курсора `{year}:{id}` — разбор и печать |
+| `MySite.Application/DependencyInjectionExtension.cs` | **Новый.** `AddApplication()` |
+| `MySite.Application/MySite.Application.csproj` | Ссылки на `MySite.Contracts` и `Microsoft.Extensions.DependencyInjection.Abstractions` |
+| `MySite.Application/Content/IContentRepository.cs` | Курсор — типизированный `ProjectCursor?`; контракт «pageSize + 1» описан в самом интерфейсе |
+| `MySite.Infrastructure.Postgres/.../ContentRepository.cs` | Разбор строки курсора удалён: курсор приходит разобранным, форма живёт в одном месте |
+| `MySite.Web/Controllers/ContentController.cs` | Усыхает до транспорта: разрешить локаль и курсор, вызвать use case, вернуть ответ |
+| `MySite.Web/DependencyInjectionExtension.cs` | `AddApplication()` в цепочке композиции |
+| `MySite.Web/Content.http` | Пример 400 на битый курсор |
+| `ARCHITECTURE.md` | Граф зависимостей, композиция, «Current shape», снята строка отклонения про сервис-слой, новый «Known problem» |
+
+Две правки внутри переносимого кода — обе меняют наблюдаемое поведение, поэтому названы явно:
+
+1. **Курсор указывал не на ту строку.** Было `displayProjects[mapped.Count - 1]`, где `mapped` —
+   список уже без невидимых проектов: если проект выпадал в середине страницы, следующая страница
+   возвращала проекты, которые вызывающий уже получил. Стало `page[^1]` — последняя прочитанная
+   строка страницы.
+2. **Битый курсор теперь 400.** Было: `?cursor=мусор` молча игнорировался и возвращал первую
+   страницу, хотя OpenAPI и `Content.http` обещали 400 на неверные параметры пагинации.
+
+Что осталось за рамками:
+
+- **Отбор по локали — по-прежнему в памяти и после нарезки страницы.** Так записано в домене:
+  `OwnerProfile.TranslationFor` прямо говорит, что правило fallback живёт здесь, а не в SQL.
+- **Следствие того же:** страница может быть короче `pageSize`, а `hasMore` описывает строки в
+  базе, а не показанные. Записано в `ARCHITECTURE.md` → «Known problems».
+- **Тестов нет** — контур тестов создаёт тикет 06. Извлечённый use case теперь тестируется юнитом
+  с подставленным `IContentRepository`, до правки логика была доступна только через HTTP и базу.
+
+**Владельцу:** граф зависимостей в `.dsh/AGENTS.md` описывает старое направление (`Application`
+не ссылается на `Contracts`). Этот файл правит планировщик, исполнитель его не трогал.
+
+### Ветка и коммит после правки
+
+Ветка та же: `feature/public-api-contract-for-one-page`.
+Коммит `fd56bcf` — `refactor: бизнес-логика контента в ContentService, контроллер — только транспорт`
+(11 файлов, +287/−112).
+Коммит `docs: отчёт по правке после ревью в тикете 03` — этот отчёт.
+
+**Чем подтверждено** (команды из `backend/`):
+
+```text
+dotnet build MySite.slnx -m:1 -p:NuGetAudit=false
+    Сборка успешно завершена.
+    Предупреждений: 0
+    Ошибок: 0
+```
+
+Первый прогон без флага упал на `NU1900` у всех восьми проектов: аудит уязвимостей NuGet не
+достучался до `api.nuget.org` (в песочнице нет сети), и это предупреждение стало ошибкой. К правке
+отношения не имеет — лечение записано в `.dsh/AGENTS.md`; после `-p:NuGetAudit=false` сборка чистая.
+
+Тесты — три прямых прогона собранных сборок (контур пуст до тикета 06):
+`MySite.UnitTests`, `MySite.ArchitectureTests`, `MySite.IntegrationTests` → `Total: 0`, код
+возврата 0 у каждого.
+
+### Правка после второго замечания: readiness-проба больше не знает контекст
+
+**Замечание владельца:** в `MySite.Web` не должно быть интеграции с `MySiteDbContext`; доступ к
+базе — через абстракцию, реализация — в инфраструктуре.
+
+**Решение: `fix`.** `PostgresHealthCheck` в Web больше не зависит от контекста:
+
+| Файл | Изменение |
+|---|---|
+| `MySite.Application/Health/IDatabaseProbe.cs` | **Новый.** Абстракция «база отвечает?» — объявлена в Application |
+| `MySite.Infrastructure.Postgres/Persistence/PostgresDatabaseProbe.cs` | **Новый.** Реализация через `MySiteDbContext` — в инфраструктуре |
+| `MySite.Infrastructure.Postgres/DependencyInjectionExtension.cs` | Регистрация пробы рядом с репозиторием |
+| `MySite.Web/HealthChecks/PostgresHealthCheck.cs` | Зависит от `IDatabaseProbe`, а не от `MySiteDbContext` |
+| `ARCHITECTURE.md` | Строка про `/health/ready` описывает, через что идёт проба |
+
+Наблюдаемое поведение `/health/ready` не изменилось: тот же `CanConnectAsync`, тот же текст
+`Unhealthy`, то же имя проверки в отчёте (`postgres`) и тот же тег (`ready`) — теги и маршруты
+остались в Web, как решил тикет 19. Новых пакетов нет: `IHealthCheck` живёт в Web (там его даёт
+ASP.NET Core), Infrastructure работает только с EF Core, который у неё уже есть.
+
+После правки `MySiteDbContext` не упоминается в `MySite.Web` нигде.
