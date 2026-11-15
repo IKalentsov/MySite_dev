@@ -119,3 +119,10 @@ demand). Политика кэша — решение тикета 18; реко�
 
 - Тикет 16 — маршрут и metadata зафиксированы; остаётся экран и переключатель.
 - Тикет 18 — политика рендеринга (динамически, без статики) и кэша (18 уточняет `no-store`).
+
+### Git
+
+Ветка `feature/public-route-shape` от `develop` `f0f05c81634796d85854d9f4c6c7b4bdabc0521a`
+(локальный `develop` совпал с `origin/develop` перед созданием ветки). Коммит
+`258ac54` — решения, 308 и metadata. PR в `develop`:
+https://github.com/IKalentsov/MySite_dev/pull/16.
