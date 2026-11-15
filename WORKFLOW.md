@@ -88,6 +88,27 @@ startup project; in the infrastructure project the same package is `PrivateAsset
 does not flow onward. Migration files are declared as generated code by the `.editorconfig` beside
 them, which keeps the analysers off code nobody wrote instead of silencing rules one by one.
 
+## Seed content
+
+The site's texts live in `backend/content/site-content.json` and reach the database through a
+command — not through an endpoint and not through a migration
+([ADR-0007](docs/adr/0007-content-seeding-through-a-command.md)). Run it from `backend/`:
+
+```powershell
+dotnet run --project src/MySite.Web -- seed --file ../../content/site-content.json
+```
+
+The path is resolved against the process's current directory, never against the Web project's
+content root. `dotnet run` starts the application with `src/MySite.Web` as its working directory, so
+from `backend/` the file is `../../content/site-content.json`; an absolute path works as well. The
+command is logged with the path it actually read, so a wrong path is visible before anything is
+written. A rerun converges: the profile is created once and updated in place on later runs, projects
+are matched by `link`, each project's translation rows and stack become exactly what the file says,
+and a project missing from the file is reported but never deleted. Exit codes: `0` seeded, `1`
+invalid input (the messages go to stderr), `2` database failure. The file's shape and rules are
+documented in `backend/content/README.md`; the current texts are placeholders until ticket 07
+replaces them.
+
 ## Run the API
 
 ```powershell
