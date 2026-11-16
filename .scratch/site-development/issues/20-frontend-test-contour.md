@@ -189,6 +189,10 @@ Blocked by: 10, 14, 18
   `getHome`). Добавляются при появлении API.
 - Не менялся продуктовый код (`home-page.tsx`, `get-home-content.ts`) — только ради тестов.
 
+### Git
+
+Ветка `feature/frontend-test-contour` от `develop` `4900cb1537fa2f8ed6dd08215d001b6a777a4cba`. Коммит `da7f069`. PR в `develop`:
+https://github.com/IKalentsov/MySite_dev/pull/21.
 ### Открытые вопросы
 
 - Vite 8 резолвит tsconfig paths нативно и при запуске подсказывает убрать `vite-tsconfig-paths`;
