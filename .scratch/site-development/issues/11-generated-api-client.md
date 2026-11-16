@@ -303,7 +303,7 @@ frontend/packages/api-client/
 
 Ветка `feature/generated-api-client` от `develop` `f01e0024930d611ac2a789859a9f10719192b9be`
 (после `git fetch origin`, `git switch develop`, `git merge --ff-only origin/develop`; хеши
-`develop` и `origin/develop` совпали). Коммит: `H1_PLACEHOLDER` — исследование, заметка и
+`develop` и `origin/develop` совпали). Коммит: `0df92aa` — исследование, заметка и
 уточнения 15/16/20; PR — ниже.
 
 PR в `develop`: https://github.com/IKalentsov/MySite_dev/pull/19.
