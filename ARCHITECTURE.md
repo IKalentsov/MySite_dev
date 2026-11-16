@@ -13,11 +13,13 @@ Last updated: 2026-11-16.
 | Web | ASP.NET Core Web API, controllers | framework from the SDK — `Microsoft.AspNetCore.App` 10.0.12 installed, no package pinned |
 | Data | EF Core + Npgsql (PostgreSQL) + `EFCore.NamingConventions` | 10.0.12 / 10.0.3 / 10.0.1 |
 | API docs | `Microsoft.AspNetCore.OpenApi` + Scalar | 10.0.12 / 2.17.14 |
+| API schema | `Microsoft.Extensions.ApiDescription.Server`, emitted at build time into `backend/docs/openapi.json` | 10.0.12 |
 | Tests | xunit v3, AwesomeAssertions, NSubstitute, ArchUnitNET | 4.0.1 / 9.6.0 / 6.2.0 / 0.13.4 |
 | Analysers | Roslynator, Meziantou, AsyncFixer, SonarAnalyzer | 5.0.1 / 3.0.294 / 2.1.0 / 10.35.0.4138 |
 | Frontend build | Next.js (App Router), React, TypeScript | 16.4.0 / 19.3.0 / 6.0.3 |
 | Frontend UI | Tailwind CSS 4, shadcn/ui copied into `packages/ui` | 4.3.3 |
 | Frontend quality | ESLint 10 + typescript-eslint, Prettier, lefthook | 10.12.0 / 8.71.1 / 3.9.9 / 2.1.17 |
+| Frontend API client | `openapi-typescript` (types) + `openapi-fetch` (typed fetch), generated from the committed schema | 7.13.0 / 0.17.0 |
 
 Backend versions are stated once, in `backend/Directory.Packages.props`. No `.csproj` carries a
 `Version`, and nothing floats. Frontend versions are stated once, in the `catalog:` of
@@ -35,6 +37,7 @@ backend/
 ├── global.json                  test runner mode
 ├── docker-compose.yml           PostgreSQL for local development
 ├── content/                     the content file the seed command reads, and its README
+├── docs/                        openapi.json: the API contract, generated at build time and committed
 ├── src/
 │   ├── MySite.Domain/                    entities, value objects, domain rules
 │   ├── MySite.Application/               use cases and the abstractions of the outside world
@@ -64,7 +67,7 @@ frontend/
 │       └── shared/
 └── packages/
     ├── ui/                      design system: tokens, styles, cn, components
-    ├── api-client/              skeleton; the generated client is tickets 11/15
+    ├── api-client/              the generated client: typed endpoint functions, public API in src/index.ts
     ├── shared/                  skeleton for shared types and utilities
     ├── eslint-config/           shared flat config: typed linting and FSD boundaries
     └── tsconfig/                base, Next.js and React library tsconfigs
@@ -115,8 +118,18 @@ apps/web/src/app → _pages → widgets → features → entities → shared
 - `/` redirects to `/ru`; `/[lang]` is the only route, and `<html lang>` comes from that segment.
   The final route shape — status code, language switch, metadata — belongs to
   [ticket 12](.scratch/site-development/issues/12-public-route-shape.md).
-- `packages/api-client` is a skeleton only: the generated client arrives in tickets 11/15 and is
-  never imported into the UI directly.
+- `packages/api-client` is the frontend's only way to the API: `openapi-typescript` turns the
+  committed `backend/docs/openapi.json` into types, `openapi-fetch` wraps `fetch` with them, and
+  `src/index.ts` exposes `createApiClient`, `getHome`, `ApiError` and the response types. Both
+  generated artefacts — the schema and `src/generated/openapi.d.ts` — are committed and never edited
+  by hand; CI regenerates each and fails on a non-empty `git diff`. Only the `pages` layer may
+  import the package: the slice's server-side data function is the single caller and the ESLint
+  boundary policy enforces it, so no component reaches the client directly. The base URL is
+  `API_BASE_URL`, `http://localhost:5054` by default.
+- One screen, one data boundary: `_pages/home/api/get-home-content.ts` calls `getHome` from the
+  client and returns `{ profile, projects }`; the route renders the screen and the data path stays
+  server-side (`cache: "no-store"`, no query library). The screen and its four states are
+  [ticket 16](.scratch/site-development/issues/16-the-page-itself.md).
 - The gates are `pnpm lint`, `pnpm typecheck` and `pnpm build` from `frontend/`; the exact commands,
   the hook and CI are in `WORKFLOW.md`.
 
@@ -208,8 +221,8 @@ makes the direction in this document enforceable instead of advisory. Every rule
 because a check that has never been seen to fail is not a check.
 
 The frontend's test contour is decided ([ticket 10](.scratch/site-development/issues/10-frontend-quality-and-test-contour.md):
-Vitest, React Testing Library, MSW and Playwright) but not installed in this change: the first
-tests land with tickets 15/16. The frontend gates that do exist are lint, typecheck and build.
+Vitest, React Testing Library, MSW and Playwright) but not installed: the first tests land with
+ticket 20. The frontend gates that do exist are the generated-client diff, lint, typecheck and build.
 
 ## Known deviations from the harness rules
 
