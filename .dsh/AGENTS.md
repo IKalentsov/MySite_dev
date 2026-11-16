@@ -390,8 +390,8 @@ What counts as a design mistake:
 > monorepo. This project uses Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui and
 > Feature-Sliced Design instead. The owner decided it; the reasoning is in
 > `docs/adr/0004-nextjs-app-router-and-fsd-frontend.md`. The rules below are the base's rules
-> re-drafted for that stack — the stack-agnostic ones are unchanged, and what the base never
-> decided is marked as an open question rather than guessed.
+> re-drafted for that stack — the stack-agnostic ones are unchanged, and the stack-specific
+> decisions are recorded in ADR-0004 and the tickets.
 
 ### Stack and structure
 
@@ -401,10 +401,10 @@ What counts as a design mistake:
 |---|---|
 | Build | Next.js (App Router), React, TypeScript |
 | UI | Tailwind CSS, shadcn/ui components |
-| Data | Open question — see "Data and state" |
+| Data | Server Components and a thin server-side data function; no query library (ticket 18) |
 | Forms | react-hook-form + zod |
 | API | Backend OpenAPI schema → a generated client |
-| Tests | Vitest, React Testing Library, MSW, Playwright |
+| Tests | Vitest, React Testing Library, MSW, Playwright — chosen in ticket 10, installed in ticket 20 |
 | Quality | ESLint (flat config), typescript-eslint, Prettier, git hooks |
 
 Exact versions are pinned in the **pnpm catalog** in `pnpm-workspace.yaml`; a workspace package
@@ -432,38 +432,35 @@ frontend/
 
 | Layer | Holds |
 |---|---|
-| `app/` | Next.js App Router routes and global providers. Minimal logic |
-| `pages/` | One screen composed from widgets, features and entities |
+| `apps/web/src/app/` | Next.js App Router routes, providers, global CSS and metadata. Not an FSD layer, and holds no business logic |
+| `_pages/` | One screen composed from widgets, features and entities. Named `_pages` because `src/pages` belongs to the Pages Router |
 | `widgets/` | Independent UI blocks that carry their own logic |
 | `features/` | One folder per business capability |
 | `entities/` | Domain entities, reusable only |
-| `shared/` | UI kit, utilities, config, test utilities; knows nothing about features |
+| `shared/` | App-specific presentation reused by several slices, utilities, config, test utilities; not a second UI kit — the design system is `packages/ui` |
 
 A layer may import only from the layers below it:
 
 ```
-app → pages → widgets → features → entities → shared
+app → _pages → widgets → features → entities → shared
 ```
 
 - **A slice lives inside a layer, and slices inside one layer do not import each other.**
   Composition happens in the layer above. A linter rule enforces it, not discipline.
-- **The App Router also calls its route directory `app/`.** How the FSD `app` layer and the
-  `app/` route directory are kept apart is open; it changes every import path, see
-  `docs/adr/0004-nextjs-app-router-and-fsd-frontend.md`.
-- **Barrel files** (re-exporting everything) are out: they break tree-shaking. The exception is
-  `features/<name>/index.ts` as the feature's public API, with explicit exports.
-- Generated files (the API client) are never edited by hand and never imported into the UI
-  directly.
+- **There is no separate FSD `app` layer.** The App Router's `app/` directory is the composition
+  root; the FSD `pages` layer is `_pages`, because `src/pages` is the Pages Router. The design
+  system (`packages/ui`) sits below `shared`: its public API may be imported from any layer.
+- **`export *` barrels are out:** they break tree-shaking. An explicit `index.ts` as the public API
+  of a slice or a workspace package is required, with named exports only.
+- Generated files (the API client) are never edited by hand. Components do not import the generated
+  code or the client package directly: a slice's server-side data function calls the client's
+  public API (ticket 18).
 
 ### Data and state
 
-> **Open — carried over from the base, not re-derived.** The base's data-and-state guidance was
-> written for a Vite SPA where every screen runs in the browser. Under the App Router the base's
-> "a query library only" rule and its query-key, `queryFn`-location and mutation-invalidation
-> rules do not settle the server-side / query-library / mixed choice, and the design system's home
-> (whether shadcn/ui components live in a design-system package or in the FSD layers) is open
-> too. Both are open questions, not decisions: see
-> `docs/adr/0004-nextjs-app-router-and-fsd-frontend.md`.
+> **Data fetching is settled (ticket 18).** The screen is a Server Component; a thin slice-level
+> data function calls the generated client, and a synchronous view receives the data as props.
+> There is no query library: client state is for client concerns only. See "Data fetching" below.
 
 **Client state**
 
@@ -472,6 +469,15 @@ app → pages → widgets → features → entities → shared
 - **State that must be shareable through a link lives in the URL** (query, filters, sorting,
   page): a link to a result survives a reload and forwarding.
 - Derived values are computed, not stored as a second field.
+
+**Data fetching (ticket 18)**
+
+- The page is a Server Component; `_pages/<slice>/api/` is the only place that knows the API client.
+- The synchronous view takes data as props and renders empty, success and partial; loading and
+  error are route files (`loading.tsx`, `error.tsx`).
+- `cache: "no-store"` and dynamic rendering; no ISR or static generation in the first version.
+- MSW substitutes the network for the client layer and client-fetched screens, not for `async`
+  Server Components.
 
 **Forms**
 
@@ -489,8 +495,8 @@ app → pages → widgets → features → entities → shared
   are never edited by hand.
 - When the backend schema changes, the client is regenerated in the same change; a divergence is
   caught by CI.
-- The UI works only through the feature's public API: calling the client directly from a component
-  is out.
+- The UI works only through the slice's public API: components do not call the client; a slice's
+  server-side data function does (ticket 18).
 
 ### UI and accessibility
 
@@ -549,7 +555,10 @@ the recipes that meet it.
   them), barrel files.
 - **A linter or type rule is not switched off instead of fixing the code.** Relaxing a rule is the
   user's decision, with a reason and a registry entry in the project.
-- A git hook runs lint and types on the changed files: a defect does not reach review.
+- A git hook runs lint on the staged files and `tsc --noEmit` over the whole project whenever a
+  `.ts`/`.tsx` file is staged. Types are project-wide because TypeScript ignores `tsconfig.json`
+  when files are passed on the command line; `--cache` is not used for typed or boundary rules
+  (ticket 10).
 
 **Tests**
 
@@ -557,7 +566,7 @@ the recipes that meet it.
 |---|---|
 | Unit | Utilities, reducers, pure functions, validation schemas |
 | Component | Component behaviour through accessible roles and text (React Testing Library) |
-| Integration | A screen with a substituted network (MSW): loading, empty, error, success |
+| Integration | A client-fetched screen with the network substituted (MSW); a server-rendered screen is covered by component tests of its sync view plus Playwright for the data path (ticket 18) |
 | End-to-end | A critical user path in a browser (Playwright) |
 
 - Tests check **behaviour, not implementation**: markup snapshots and reaching into internal
@@ -565,10 +574,14 @@ the recipes that meet it.
 - The network is substituted at the request level, not by mocking modules.
 - New functionality arrives with a test at the matching level.
 
+The runner and its configs are installed in ticket 20; before that the frontend gates are `lint`,
+`typecheck` and `build`.
+
 **Definition of done**
 
 1. `typecheck` and `lint` pass with no errors and no warnings.
-2. Tests are green; new functionality is covered at the matching level.
+2. Tests are green; new functionality is covered at the matching level (the frontend runner is
+   installed in ticket 20).
 3. The build passes and the bundle stays inside the project's budget.
 4. The screen implements every mandatory state and passes the accessibility checklist.
 5. State that must be shareable through a link is reproducible from the URL.
@@ -606,8 +619,8 @@ facts below survive.
 | Languages | Russian first, English behind a switch. Public routes are `/[lang]/...`; each text is stored per locale in translation tables ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)) |
 | Backend stack | .NET 10 (`net10.0`); ASP.NET Core Web API with controllers; EF Core + Npgsql (PostgreSQL); OpenAPI + Scalar |
 | Frontend stack | Next.js with the App Router, TypeScript, Tailwind CSS, shadcn/ui, Feature-Sliced Design ([ADR-0004](docs/adr/0004-nextjs-app-router-and-fsd-frontend.md)) |
-| Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is reserved and empty |
-| Package set and versions | stated once, in `backend/Directory.Packages.props`; no `.csproj` carries a `Version` |
+| Physical layout | `backend/src/MySite.{Domain,Application,Contracts,Infrastructure.Postgres,Web}`, `backend/tests/MySite.{UnitTests,IntegrationTests,ArchitectureTests}`, solution `backend/MySite.slnx`; `frontend/` is a pnpm monorepo: `apps/web` and `packages/{ui,api-client,shared,eslint-config,tsconfig}` |
+| Package set and versions | Backend: `backend/Directory.Packages.props`, no `.csproj` carries a `Version`; frontend: the `catalog:` in `frontend/pnpm-workspace.yaml`, every `package.json` uses `"catalog:"` |
 | Database | PostgreSQL in Docker via `backend/docker-compose.yml`, published on `localhost:5433`; credentials in the untracked `backend/.env`; the schema is one generated migration |
 | Commands | `WORKFLOW.md` |
 | Architecture | `ARCHITECTURE.md` |
@@ -615,8 +628,8 @@ facts below survive.
 | Decisions | `docs/adr/` |
 | Research | `docs/research/` |
 | First phase | Public site: every page open, no sign-in. Authentication is deferred to the administration panel and will be written from scratch ([ADR-0006](docs/adr/0006-identity-stack-removed.md); [ADR-0003](docs/adr/0003-public-site-first-phase.md) is superseded) |
-| Planned | The administration panel and the visual design; both after the public page |
-| Environment | .NET SDK 10.0.401; Docker 29.7.2 with Compose v5.3.1 |
+| Planned | The frontend test runner (ticket 20), the administration panel and the visual design |
+| Environment | .NET SDK 10.0.401; Node 24.18.0; pnpm 12.9.1; Docker 29.7.2 with Compose v5.3.1 |
 | Git protocol | **`master` and `develop` accept changes only through a pull request: a direct push to either branch is forbidden for everyone, the owner included.** One task, one branch off the current local **`develop`** (the working branch; `master` lags behind and is not used as a base), named **`feature/<slug>`**, where `<slug>` is the ticket's file name in `.scratch/site-development/issues/` without the number and the extension. An executor commits to that branch, **pushes that branch and opens the pull request into `develop`** — that is how a finished task is handed over. An executor never pushes to `master` or `develop`, never force-pushes, never merges or rebases them, and never merges its own pull request: merging is the owner's act, and **a task counts as done only once its pull request is merged**. GitHub over SSH is reachable from this machine with the `~/.ssh/my_ssh` key. An executor keeps its base current before touching git: `git fetch origin`, fast-forward the local `develop` to `origin/develop`, and confirm both hashes match **before** creating the task branch — a branch never starts from a stale base. It never merges, rebases, resets or force-pushes a protected branch; a local `develop` that will not fast-forward is the owner's to resolve. A delegated worker that only edits code — a local model, for instance — is given no git at all: the delegating agent owns its branch, commit, push and pull request |
 | Working on a ticket | The standing contract every executor reads first is `.dsh/AGENT-TASKS.md`: branch, environment, the exact build/test/docker/migration commands, the boundary of the executor's job and the definition of done. Ticket files in `.scratch/site-development/issues/` carry the task itself and point at that contract; the `prompts/` folder is gone |
 
@@ -627,22 +640,21 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 
 **Blocking the first page**
 
-- Nothing is seeded: the endpoints exist, but the page has nothing to read until the profile text
-  and the projects are in the database.
-- The frontend project does not exist: `frontend/` holds a README and nothing else.
+- The owner's texts are not written: the page shows the seed placeholders until ticket 07 replaces
+  them. The endpoints and the seeded data exist (ticket 08).
 
-**Frontend, carried over from ADR-0004**
+**Frontend**
 
-- Data fetching under the App Router: server components, a query library, or a mix.
-- Where shadcn/ui components live: a design-system package or inside the FSD layers.
-- The FSD `app` layer and the App Router's `app/` directory both claim the name; how they are kept
-  apart changes every import path.
-- The test runner is still listed as Vitest, which is unconfirmed for Next.js.
+- The ADR-0004 questions are closed: data fetching (ticket 18), the design system (ticket 13), the
+  `app/` collision (ticket 13) and the test runner (ticket 10). The runner itself is installed in
+  ticket 20.
 
 **Later**
 
 - The administration panel: its screens, its content model, and what it may change.
 - The visual design, which waits on the owner's references.
+- Next.js-specific lint rules (`eslint-config-next`): its peer graph lags ESLint 10; revisit when
+  React components arrive.
 - The PostgreSQL credentials are out of the tracked files: they live in the ignored `backend/.env`
   and `appsettings.Development.json`.
 
@@ -653,5 +665,7 @@ itself are in `ARCHITECTURE.md` (§ Known problems).
 the target framework, the package set and every version are this project's, and the build is
 clean under `TreatWarningsAsErrors` with all four analysers.
 
-`frontend/templates/` is empty in the base by design and holds only a README explaining what
-belongs there. The frontend configuration for this project is not written yet.
+`frontend/templates/` comes from the base and is not used here. The frontend configuration is
+written: `frontend/pnpm-workspace.yaml` (catalog), `frontend/eslint.config.mjs`,
+`packages/eslint-config`, `packages/tsconfig` and the per-package `tsconfig.json`/`package.json`
+files.

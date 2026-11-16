@@ -163,6 +163,9 @@ passes `LEFTHOOK_CONFIG` explicitly instead of relying on `lefthook install`.
 CI is `.github/workflows/frontend.yml`: pinned pnpm 12.9.1 and Node 24.18.0, then
 `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm typecheck` → `pnpm build`.
 
+Tests are not part of the gate yet: ticket 20 installs Vitest, React Testing Library, MSW and
+Playwright and adds `pnpm test` to this list and to CI.
+
 ## Definition of done
 
 1. For backend work, `dotnet build MySite.slnx` (inside the agent sandbox `dotnet build MySite.slnx
@@ -201,7 +204,8 @@ A departure without an entry here is not a decision. The executor's copy of this
 
 | Date | Requirement that does not apply | Reason | Scope | Condition for coming back |
 |---|---|---|---|---|
-| 2026-10-07 | The "green tests" criterion cannot be checked: there are no tests, and `dotnet test` exits 8 on empty projects | The three test projects are empty skeletons, and on an empty set `Microsoft.Testing.Platform` reports the run as unsuccessful | Every task until ticket 06 | With the first test (ticket 06) done means exit code 0 with a non-zero number of tests |
-| 2026-10-07 | The frontend gate commands (`pnpm lint`, `pnpm typecheck`, `pnpm build`) are not written down | There is no frontend in the repository yet: `frontend/` is a README | Frontend tasks until ticket 14 | Ticket 14 creates the pnpm workspace and writes the real commands into the Frontend section of this file |
 | 2026-10-07 | `dotnet format --verify-no-changes` is not available | The command opens the workspace through MSBuild and needs restore, which the agent sandbox does not run | Every task that would check style | Does not come back: style is checked by the build (`EnforceCodeStyleInBuild=true`) |
-| 2026-10-07 | `git fetch`/`git pull` from `origin` do not work | GitHub over SSH does not answer from this machine (`Permission denied (publickey)`) | Every task | The owner sets up SSH, or the remote moves to HTTPS |
+
+Resolved departures were removed; their history stays in git. The empty-test row was closed by
+ticket 06, the frontend-gates row by ticket 14, and the inaccessible `git fetch` row by the working
+SSH setup.
