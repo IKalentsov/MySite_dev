@@ -148,6 +148,8 @@ repeats a range. Node 24 or newer and pnpm 12.9.1 are expected (`engines.node`,
 | `pnpm typecheck` | `next typegen` and `tsc --noEmit` in every workspace package |
 | `pnpm build` | `next build` for `apps/web`; it also type-checks the routes and writes the production bundle |
 | `pnpm --filter @mysite/api-client generate` | regenerates the client types from `backend/docs/openapi.json`; see "Generated API client" below |
+| `pnpm test` | the frontend tests: Vitest through the `@mysite/web` filter, then Playwright against `next start` on port 3100 |
+| `pnpm --filter @mysite/web test:e2e` | Playwright only; the home page's data path needs the local stack, see "End-to-end tests" below |
 
 `pnpm format` rewrites files with Prettier 3.9.9 and `pnpm format:check` reports instead of writing.
 Formatting is not a gate of its own: ESLint only turns off the rules Prettier owns.
@@ -163,10 +165,43 @@ passes `LEFTHOOK_CONFIG` explicitly instead of relying on `lefthook install`.
 
 CI is `.github/workflows/frontend.yml`: pinned pnpm 12.9.1 and Node 24.18.0, then
 `pnpm install --frozen-lockfile` → `pnpm --filter @mysite/api-client generate` → `git diff
---exit-code -- frontend/packages/api-client` → `pnpm lint` → `pnpm typecheck` → `pnpm build`.
+--exit-code -- frontend/packages/api-client` → `pnpm lint` → `pnpm typecheck` → `pnpm build` →
+install Chromium → `pnpm --filter @mysite/web test` → `pnpm --filter @mysite/web test:e2e`.
 
-Tests are not part of the gate yet: ticket 20 installs Vitest, React Testing Library, MSW and
-Playwright and adds `pnpm test` to this list and to CI.
+## End-to-end tests
+
+The runner is Playwright 1.63.0, configured in `apps/web/playwright.config.ts`: one Chromium project,
+`testDir: "./e2e"`, and a `webServer` that starts the **built** application with `next start` on port
+3100 (not the dev server on 3000), reused locally and restarted in CI. The specs are:
+
+| Spec | What it checks | What it needs |
+|---|---|---|
+| `e2e/home.spec.ts` | the smoke path: `/` redirects to `/ru` and `<html lang="ru">` is set | a build, nothing else |
+| `e2e/page.spec.ts` | the page's real data path: the profile and three published projects, the unpublished project staying hidden, the Russian fallback on `/en` (ADR-0005), the locale switch, no horizontal scroll at 360 px, the theme following the system preference | a build, the API on `:5054` and the seeded database (ticket 08) |
+
+The screen's four states are component-level facts and live in Vitest: `_pages/home/ui/home-page-view.test.tsx`
+covers empty, success and both partial results, `src/__tests__/loading.test.tsx` the loading skeleton and
+`src/__tests__/error-boundary.test.tsx` the error boundary with its retry. Playwright checks the data path
+those components receive from the real API.
+
+The data-path spec talks to the live API, so it needs the whole local stack:
+
+```powershell
+# from backend/
+docker compose up -d
+docker compose ps                                                              # mysite_postgres … Up
+dotnet ef database update -p src/MySite.Infrastructure.Postgres -s src/MySite.Web
+dotnet run --project src/MySite.Web -- seed --file ../../content/site-content.json
+dotnet run --project src/MySite.Web                                            # API on http://localhost:5054
+
+# from frontend/
+pnpm build
+pnpm --filter @mysite/web test:e2e
+```
+
+The API base URL is `API_BASE_URL` and defaults to `http://localhost:5054`; point it somewhere else
+and the page renders its error state instead. Without the API the data-path spec fails while the
+smoke spec still passes.
 
 ## Generated API client
 
@@ -238,9 +273,9 @@ only needs a non-empty connection string.
    the suppression and it is recorded in the registry below.
 5. Documentation reflects the change: `ARCHITECTURE.md` when the structure, a contract or the
    stack moved; `.dsh/AGENTS.md` when a project fact changed.
-6. For frontend work, `pnpm lint`, `pnpm typecheck` and `pnpm build` from `frontend/` pass with no
-   errors and no warnings, and the four mandatory screen states are implemented where a screen reads
-   data.
+6. For frontend work, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` and — with the local
+   stack up — `pnpm test:e2e` from `frontend/` pass with no errors and no warnings, and the four
+   mandatory screen states are implemented where a screen reads data.
 7. Generated artefacts follow the contract in the same change: `backend/docs/openapi.json` and the
    client types are regenerated, not edited by hand, and the two CI diff checks pass.
 

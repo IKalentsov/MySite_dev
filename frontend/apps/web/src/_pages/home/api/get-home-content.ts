@@ -1,5 +1,7 @@
 import { getHome, type OwnerProfile, type Project } from "@mysite/api-client";
 
+export type { OwnerProfile, Project };
+
 export type HomeContent = {
   profile: OwnerProfile | null;
   projects: Project[];
