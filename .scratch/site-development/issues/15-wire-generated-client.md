@@ -1,7 +1,7 @@
 # 15 — Подключить сгенерированный клиент
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 11, 14, 18
 
 ## Как работать с этой задачей
@@ -168,4 +168,145 @@ frontend/packages/api-client/
 
 ## Answer
 
-<!-- заполняется при закрытии -->
+**Сделано.** Клиент генерируется из закоммиченной схемы бэкенда и подключён к странице одной тонкой
+границей данных.
+
+- **Схема.** `Microsoft.Extensions.ApiDescription.Server` 10.0.12 — версия в
+  `backend/Directory.Packages.props`, пакет в `MySite.Web.csproj`, `OpenApiGenerateDocumentsOnBuild`
+  выключен, поэтому обычная сборка приложение не запускает. Документ снимается отдельным шагом и
+  лежит в `backend/docs/openapi.json` (закоммичен). Build-time генерация в этом приложении
+  **работает**: резервный путь с запущенного API не понадобился.
+- **Пакет.** `@mysite/api-client`: `openapi-typescript` 7.13.0 (devDependency) + `openapi-fetch`
+  0.17.0 (dependency), обе версии — в pnpm-каталоге; в `peerDependencyRules` добавлено
+  `"openapi-typescript>typescript": "6"` с причиной и условием пересмотра. Типы —
+  `src/generated/openapi.d.ts` (generated, в git), публичный API — только `src/index.ts`:
+  `createApiClient`, `getHome`, `ApiError` и типы `OwnerProfile` / `Project` / `HomeResponse`.
+  `baseUrl` берётся из `API_BASE_URL`, по умолчанию `http://localhost:5054`.
+- **Граница данных.** `apps/web/src/_pages/home/api/get-home-content.ts` вызывает `getHome` и
+  отдаёт `{ profile, projects }`; `HomeContent` и `getHomeContent` экспортируются из публичного API
+  слайса `_pages/home/index.ts`. Компоненты пакет не импортируют.
+- **ESLint.** `api-client` разрешён только слою `pages` (`eslint-plugin-boundaries`), глубокие
+  импорты `@mysite/api-client/*` запрещены, `packages/api-client/src/generated/**` — в
+  `globalIgnores`. Хук `pre-commit` получил `--no-warn-ignored`: без него ESLint предупреждал о
+  явно переданном ignore-файле, `--max-warnings=0` превращал это в падение коммита. Правила не
+  ослаблены, файл по-прежнему не линтуется — это решение тикета, а не подавление.
+- **CI.** Две независимые проверки: `frontend.yml` — `pnpm --filter @mysite/api-client generate` →
+  `git -C .. diff --exit-code -- frontend/packages/api-client` перед гейтами (порядок из тикета:
+  install → generate → diff → lint → typecheck → build); `backend.yml` — шаг схемы →
+  `git diff --exit-code -- docs/openapi.json`. База и запущенный API не нужны, строка подключения
+  только непустая.
+
+**Чем подтверждено.**
+
+Схема, два прогона подряд (детерминированность):
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=127.0.0.1;Port=5433;Database=MySite;Username=build;Password=build"
+dotnet build src/MySite.Web/MySite.Web.csproj -m:1 -p:OpenApiGenerateDocumentsOnBuild=true
+# Сборка успешно завершена. Предупреждений: 0, Ошибок: 0
+# (Get-FileHash docs\openapi.json).Hash → 9F6C55A8D3E474B2FD283DA22D425E5BE5FBA043D803ADD7328905398ECCED53
+# повторный прогон — тот же хеш
+```
+
+Файл 11 264 байта; `servers` в build-time документе нет (в runtime-снимке был — исследование 11 это
+предсказывало), `openapi-typescript` его не использует.
+
+Фронтенд:
+
+```text
+pnpm install --frozen-lockfile   → EXIT=0
+pnpm lint                        → EXIT=0
+pnpm typecheck                   → EXIT=0 (packages: ui, api-client, shared, apps/web)
+pnpm build                       → EXIT=0, ƒ /[lang]
+pnpm --filter @mysite/api-client generate → EXIT=0
+git -C .. diff --exit-code -- frontend/packages/api-client → EXIT=0
+```
+
+Бэкенд:
+
+```text
+dotnet build MySite.slnx -m:1  → Предупреждений: 0, Ошибок: 0, EXIT=0
+dotnet test MySite.slnx        → итог: 43, сбой: 0, успешно: 43, пропущено: 0, EXIT=0
+dotnet ef migrations list      → 20261006231005_ContentSchema (Pending нет)
+dotnet ef database update      → No migrations were applied. The database is already up to date. Done.
+docker compose ps              → mysite_postgres … Up 7 hours (0.0.0.0:5433->5432/tcp)
+pg_isready                     → /var/run/postgresql:5432 - accepting connections
+```
+
+Клиент против живого локального API. Строка подключения и профиль — из локальной базы
+(`seed` → `Profile: unchanged. Projects: … unchanged 4`). Проверка шла через настоящий серверный путь
+Next.js: `getHomeContent("ru")` временно вызывался из `home-page.tsx`, dev-сервер отдал страницу:
+
+```text
+GET http://localhost:3000/ru → 200
+… Заглушка: .NET-разработчик, восемь лет в промышленной разработке 3 projects,
+  first: Заглушка: MySite — этот сайт …
+```
+
+Три проекта из четырёх — верно: `Keycloak_Learn` не опубликован. Временная правка страницы
+откачена, в коммиты не попала. `Invoke-WebRequest http://localhost:5054/api/v1/home?locale=ru` →
+`200` с `profile` и `projects.items`.
+
+Негативные проверки CI — обе падают на расхождении (это и был критерий):
+
+```text
+# правка описания в backend/docs/openapi.json, закоммичена, не перегенерирована:
+pnpm --filter @mysite/api-client generate; git -C .. diff --exit-code -- frontend/packages/api-client
+  → FRONTEND_STALE_EXIT=1 (diff по src/generated/openapi.d.ts)
+dotnet build src/MySite.Web/… -p:OpenApiGenerateDocumentsOnBuild=true; git diff --exit-code -- docs/openapi.json
+  → BACKEND_STALE_EXIT=1 (diff по docs/openapi.json)
+# после отката правки обе проверки дают 0.
+```
+
+Эта же негативная проверка нашла ошибку в первой версии шага: из `frontend/` пути git-диффа
+`packages/api-client` не существует (pathspec от корня), проверка молча проходила. Путь исправлен на
+`frontend/packages/api-client`, после чего обе проверки ведут себя правильно в обе стороны.
+
+Негативные проверки ESLint (временные файлы, удалены):
+
+```text
+apps/web/src/widgets/probe/index.ts  import { getHome } from "@mysite/api-client"
+  → FSD boundary violated: widgets may not import api-client (boundaries/dependencies)
+widgets, feature, entity, shared       import type … "@mysite/api-client/src/generated/openapi"
+  → '@mysite/api-client/*' import is restricted … (no-restricted-imports)
+packages/ui (ui-package)               import api-client
+  → FSD boundary violated: ui-package may not import api-client
+```
+
+**Решение, которое пришлось принять (вопрос задан владельцу при выдаче).** Владелец выбрал **один**
+`GET /api/v1/home` (рекомендация исследования 11), поэтому `HomeContent = { profile, projects }`, без
+поля `failed`, и `getProfile`/`getProjects` в публичный API пакета не выводятся: единственная
+функция-эндпоинт — `getHome`. Формулировка тикета 18 про `Promise.allSettled` и частичный отказ по
+двум запросам этим решением заменяется — её надо поправить в 18 (и учесть в 16), чтобы документ и код
+не расходились.
+
+**Файлы, ветка, коммиты.** Ветка `feature/wire-generated-client` от `develop` = `origin/develop` =
+`e74f8dc`.
+
+- `4c97c37` feat: снимать OpenAPI-схему на сборке бэкенда — `backend/Directory.Packages.props`,
+  `backend/src/MySite.Web/MySite.Web.csproj`, `backend/docs/openapi.json` (новый).
+- `6818c00` feat: подключить сгенерированный клиент `@mysite/api-client` — новый пакет
+  (`package.json`, `tsconfig.json`, `src/client.ts`, `src/api-error.ts`, `src/index.ts`,
+  `src/generated/openapi.d.ts`), `apps/web/package.json`, `apps/web/src/_pages/home/api/get-home-content.ts`
+  (новый) и `_pages/home/index.ts`, `frontend/eslint.config.mjs`,
+  `packages/eslint-config/src/index.mjs`, `frontend/lefthook.yml`, `pnpm-workspace.yaml`,
+  `pnpm-lock.yaml`.
+- `93e7fc6` ci: две проверки расхождения — `.github/workflows/frontend.yml`, `backend.yml`.
+- `b4ffc86` docs: `WORKFLOW.md` (раздел «Generated API client», порядок гейтов, DoD п. 7),
+  `ARCHITECTURE.md` (стек, раскладка, граница данных, тестовый контур), `frontend/README.md`.
+
+**Что осталось за рамками и что требует решения владельца.**
+
+1. `.dsh/AGENTS.md` (Quality → Lint and types) — строку про то, что сгенерированный файл не линтуется,
+   а сверяется `tsc` и diff'ом, правит планер; в этой ветке файл не тронут (граница §10).
+2. Тикет 18: поправить формулировку про два запроса и `failed` — решением владельца выбран `/home`.
+3. Пакет `server-only` в монорепе не установлен; добавлять зависимость без согласования не стал,
+   `get-home-content.ts` помечен комментарием, что он серверный. Если нужен компиляторный запрет
+   клиентского импорта — отдельный тикет и согласованная зависимость.
+4. Тесты клиента через MSW, четыре состояния экрана и переключатель языка — тикеты 16 и 20 (по
+   решению тикета 18 тестовый контур ставится в 20).
+5. Строка подключения с `Username=build;Password=build` в CI и `WORKFLOW.md` — dummy, только чтобы
+   `AddInfrastructure` пропустил старт; к базе никто не подключается.
+6. `getHome`/`ApiError` протестированы вручную живым запросом, а не юнит-тестом: раннера фронтенда до
+   тикета 20 нет. Это осознанное отступление от «новая функциональность покрыта тестом», записанное
+   здесь как вопрос владельцу — при желании закрывается тикетом 20 до мержа.
