@@ -191,7 +191,7 @@ Blocked by: 10, 14, 18
 
 ### Git
 
-Ветка `feature/frontend-test-contour` от `develop` `4900cb1537fa2f8ed6dd08215d001b6a777a4cba`. Коммит `da7f069`. PR в `develop`:
+Ветка `feature/frontend-test-contour` от `develop` `4900cb1537fa2f8ed6dd08215d001b6a777a4cba`. Коммиты `da7f069` (контур), `151f1db` (закрытие тикета), `0db7a26` (фикс CI: playwright install из `apps/web`). CI по PR зелёный. PR в `develop`:
 https://github.com/IKalentsov/MySite_dev/pull/21.
 ### Открытые вопросы
 
