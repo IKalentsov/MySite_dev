@@ -7,10 +7,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "generate": "openapi-typescript ../../../backend/docs/openapi.json -o src/generated/openapi.d.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "catalog:"
   },
   "devDependencies": {
     "@mysite/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "openapi-typescript": "catalog:",
     "typescript": "catalog:"
   }
 }

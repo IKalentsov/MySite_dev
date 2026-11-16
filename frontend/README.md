@@ -17,7 +17,7 @@ frontend/
 │       ├── widgets/ features/ entities/
 │       └── shared/
 ├── packages/ui/                 design system: tokens, styles, cn, components
-├── packages/api-client/         skeleton; the generated client is tickets 11/15
+├── packages/api-client/         the generated client: typed functions over the backend OpenAPI schema
 ├── packages/shared/             skeleton for shared types and utilities
 ├── packages/eslint-config/      shared flat config, FSD boundaries
 ├── packages/tsconfig/           base, Next.js and React library tsconfigs
@@ -39,6 +39,11 @@ pnpm typecheck
 pnpm build
 ```
 
+`pnpm --filter @mysite/api-client generate` rebuilds the client types from the committed
+`backend/docs/openapi.json`; the schema itself is produced by the backend's build. Both generated
+files are committed and never edited by hand — [`WORKFLOW.md`](../WORKFLOW.md#generated-api-client)
+has the two commands and the CI checks.
+
 `pnpm format` and `pnpm format:check` run Prettier. The three gates plus their CI are described in
 [`WORKFLOW.md`](../WORKFLOW.md#frontend).
 
@@ -53,6 +58,8 @@ and pnpm 12.9.1 (`engines.node`, `devEngines.packageManager`), and the lockfile 
 
 `packages/ui` exposes `src/index.ts` (explicit named exports) and `src/styles/globals.css` only.
 Deep imports such as `@mysite/ui/components/ui/button` fail both package resolution and ESLint.
+`packages/api-client` exposes `src/index.ts` only for the same reason, and only the `_pages` layer
+may import it: a slice's server-side data function is the client's single caller.
 `apps/web` follows the FSD direction `app → _pages → widgets → features → entities → shared`, and
 `eslint-plugin-boundaries` plus `import/no-restricted-paths` enforce it.
 

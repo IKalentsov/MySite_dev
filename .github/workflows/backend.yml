@@ -43,3 +43,16 @@ jobs:
 
       - name: Test
         run: dotnet test MySite.slnx -c Debug
+
+      # The schema is committed and the frontend is generated from it, so a
+      # contract change that skipped the regeneration fails here.
+      #
+      # The connection string only has to be non-empty: the document generator
+      # runs the app's entrypoint, and AddInfrastructure rejects an empty value.
+      # Nothing connects to a database.
+      - name: Check the committed OpenAPI document is current
+        env:
+          ConnectionStrings__DefaultConnection: Host=127.0.0.1;Port=5433;Database=MySite;Username=build;Password=build
+        run: |
+          dotnet build src/MySite.Web/MySite.Web.csproj --no-restore -p:OpenApiGenerateDocumentsOnBuild=true
+          git diff --exit-code -- docs/openapi.json

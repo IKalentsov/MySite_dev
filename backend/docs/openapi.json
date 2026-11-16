@@ -1,0 +1,396 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "MySite.Web | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/home": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Returns the combined home page content: profile and projects.",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Keyset cursor for projects pagination (format: `{year}:{id}`).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Number of projects per page (default 20, max 100).",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The home page content.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid locale or pagination parameters.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Returns the owner's \"about me\" text.",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. When the text has no\ntranslation in the requested locale, the default locale's text is returned and the response\nechoes the locale it actually came from.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile text (or null when not yet written).",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerProfileResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerProfileResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The locale is not one the site publishes.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "tags": [
+          "Content"
+        ],
+        "summary": "Returns the published projects with keyset pagination.",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. A project whose text\nis missing in the requested locale falls back to the default locale's text.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Keyset cursor for pagination (format: `{year}:{id}`).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Number of projects per page (default 20, max 100).",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The paginated projects list.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedProjectsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedProjectsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedProjectsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid locale or pagination parameters.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HomeResponse": {
+        "required": [
+          "profile",
+          "projects"
+        ],
+        "type": "object",
+        "properties": {
+          "profile": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The owner's resolved profile, or null when not yet written.",
+                "$ref": "#/components/schemas/OwnerProfileResponse"
+              }
+            ]
+          },
+          "projects": {
+            "description": "The published projects with keyset pagination metadata.",
+            "$ref": "#/components/schemas/PaginatedProjectsResponse"
+          }
+        },
+        "description": "The combined home page response: owner profile and published projects."
+      },
+      "OwnerProfileResponse": {
+        "required": [
+          "locale",
+          "headline",
+          "about"
+        ],
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "description": "The locale the text was resolved to."
+          },
+          "headline": {
+            "type": "string",
+            "description": "The one-line description of the owner."
+          },
+          "about": {
+            "type": "string",
+            "description": "The body of the \"about me\" text."
+          }
+        },
+        "description": "The owner's \"about me\" text, already resolved to one locale. The locale is echoed back so a\ncaller can tell which text it received when the requested translation was missing."
+      },
+      "PaginatedProjectsResponse": {
+        "required": [
+          "items",
+          "nextCursor",
+          "hasMore"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectResponse"
+            },
+            "description": "The project items for this page."
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A cursor to fetch the next page, or null when this is the last page."
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether there are more pages after this one."
+          }
+        },
+        "description": "The published projects with keyset pagination metadata."
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ProjectResponse": {
+        "required": [
+          "title",
+          "summary",
+          "stack",
+          "link",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The project's name."
+          },
+          "summary": {
+            "type": "string",
+            "description": "A short description of the project."
+          },
+          "stack": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The technologies the project was built with, in display order."
+          },
+          "link": {
+            "type": "string",
+            "description": "A link to the repository or to a live demo."
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The year the project was made.",
+            "format": "int32"
+          }
+        },
+        "description": "One project shown on the site, already resolved to one locale."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Content"
+    }
+  ]
+}

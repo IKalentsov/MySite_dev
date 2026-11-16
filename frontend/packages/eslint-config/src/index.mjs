@@ -28,19 +28,14 @@ const elements = [
 // A layer may import only the layers strictly below it. Packages are below
 // `shared`; `shared` and `ui-package` are slices as well as layers, so their
 // internal imports are covered by the "internal" policy at the end.
+//
+// `api-client` is allowed from `pages` only: a slice's server-side data
+// function is the single caller of the API (ticket 18), so a widget, feature,
+// entity or shared module importing the client is a boundary violation.
 const allowedImporters = [
   {
     from: "route",
-    to: [
-      "pages",
-      "widgets",
-      "features",
-      "entities",
-      "shared",
-      "ui-package",
-      "api-client",
-      "shared-package",
-    ],
+    to: ["pages", "widgets", "features", "entities", "shared", "ui-package", "shared-package"],
   },
   {
     from: "pages",
@@ -48,19 +43,19 @@ const allowedImporters = [
   },
   {
     from: "widgets",
-    to: ["features", "entities", "shared", "ui-package", "api-client", "shared-package"],
+    to: ["features", "entities", "shared", "ui-package", "shared-package"],
   },
   {
     from: "features",
-    to: ["entities", "shared", "ui-package", "api-client", "shared-package"],
+    to: ["entities", "shared", "ui-package", "shared-package"],
   },
   {
     from: "entities",
-    to: ["shared", "ui-package", "api-client", "shared-package"],
+    to: ["shared", "ui-package", "shared-package"],
   },
   {
     from: "shared",
-    to: ["ui-package", "api-client", "shared-package"],
+    to: ["ui-package", "shared-package"],
   },
   {
     from: "api-client",
@@ -175,7 +170,9 @@ export const config = [
     },
   },
   {
-    // @mysite/ui exposes one entry point and one CSS subpath (ticket 13).
+    // @mysite/ui exposes one entry point and one CSS subpath (ticket 13);
+    // @mysite/api-client exposes one entry point and hides the generated types
+    // (ticket 15).
     files: [
       "apps/**/*.{ts,tsx}",
       "packages/api-client/**/*.{ts,tsx}",
@@ -189,6 +186,10 @@ export const config = [
             {
               group: ["@mysite/ui/*"],
               message: "Import from @mysite/ui root; deep imports are not public API.",
+            },
+            {
+              group: ["@mysite/api-client/*"],
+              message: "Import from @mysite/api-client root; deep imports are not public API.",
             },
           ],
         },
