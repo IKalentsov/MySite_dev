@@ -11,7 +11,12 @@ pre-commit:
     - name: lint
       root: "frontend/"
       glob: "*.{js,mjs,cjs,ts,tsx}"
-      run: pnpm exec eslint --max-warnings=0 {staged_files}
+      # --no-warn-ignored: the file list is the staged set, and it may include a
+      # file the flat config ignores on purpose (the generated API client types).
+      # ESLint then warns that it ignored an explicitly passed file; the warning is
+      # about the invocation, not about the code, and --max-warnings=0 turns it
+      # into a failed commit. Ignored files stay ignored; no rule is relaxed.
+      run: pnpm exec eslint --max-warnings=0 --no-warn-ignored {staged_files}
     - name: typecheck
       root: "frontend/"
       glob: "*.{ts,tsx}"

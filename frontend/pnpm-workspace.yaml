@@ -20,6 +20,8 @@ catalog:
   "lefthook": "2.1.17"
   "next": "16.4.0"
   "next-themes": "0.4.6"
+  "openapi-fetch": "0.17.0"
+  "openapi-typescript": "7.13.0"
   "prettier": "3.9.9"
   "react": "19.3.0"
   "react-dom": "19.3.0"
@@ -52,6 +54,13 @@ minimumReleaseAgeExclude:
 # eslint-plugin-import@2.32.0 stops its ESLint peer range at ^9, while the
 # project runs ESLint 10. The rule this project needs from it
 # (import/no-restricted-paths) works on 10; ticket 14 records the decision.
+#
+# openapi-typescript@7.13.0 declares `typescript: ^5.x` while the project runs
+# 6.0.3; its generated types compile and type-check under 6.0.3 (ticket 11),
+# and upstream has not widened the range yet (openapi-ts issue #2723). The
+# override is dropped when a release declares ^6, or with the TypeScript 7
+# migration, whichever comes first.
 peerDependencyRules:
   allowedVersions:
     "eslint-plugin-import>eslint": "10"
+    "openapi-typescript>typescript": "6"

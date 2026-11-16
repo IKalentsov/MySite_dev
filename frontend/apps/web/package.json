@@ -9,6 +9,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@mysite/api-client": "workspace:*",
     "@mysite/ui": "workspace:*",
     "next": "catalog:",
     "next-themes": "catalog:",
