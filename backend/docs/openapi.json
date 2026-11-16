@@ -96,7 +96,7 @@
           {
             "name": "locale",
             "in": "query",
-            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. When the text has no\r\ntranslation in the requested locale, the default locale's text is returned and the response\r\nechoes the locale it actually came from.",
+            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. When the text has no\ntranslation in the requested locale, the default locale's text is returned and the response\nechoes the locale it actually came from.",
             "schema": {
               "type": "string"
             }
@@ -156,7 +156,7 @@
           {
             "name": "locale",
             "in": "query",
-            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. A project whose text\r\nis missing in the requested locale falls back to the default locale's text.",
+            "description": "The locale to answer in: `ru` or `en`. Defaults to `ru`. A project whose text\nis missing in the requested locale falls back to the default locale's text.",
             "schema": {
               "type": "string"
             }
@@ -276,7 +276,7 @@
             "description": "The body of the \"about me\" text."
           }
         },
-        "description": "The owner's \"about me\" text, already resolved to one locale. The locale is echoed back so a\r\ncaller can tell which text it received when the requested translation was missing."
+        "description": "The owner's \"about me\" text, already resolved to one locale. The locale is echoed back so a\ncaller can tell which text it received when the requested translation was missing."
       },
       "PaginatedProjectsResponse": {
         "required": [

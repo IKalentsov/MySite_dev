@@ -34,4 +34,37 @@
     <ProjectReference Include="..\MySite.Infrastructure.Postgres\MySite.Infrastructure.Postgres.csproj" />
   </ItemGroup>
 
+  <!--
+    The committed document must be the same bytes on every platform: CI regenerates it and fails on
+    a non-empty `git diff`. The compiler writes its XML documentation file with CRLF on Windows, and
+    those line breaks travel into the OpenAPI descriptions as the escape sequence \r\n, while on Linux
+    the same text carries \n. Nothing else differs, so the generated document is normalized to \n.
+  -->
+  <UsingTask TaskName="NormalizeOpenApiDocument" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Text" />
+      <Using Namespace="Microsoft.Build.Framework" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var document = File.ReadAllText(FilePath);
+        var normalized = document.Replace("\\r\\n", "\\n");
+        if (!string.Equals(normalized, document, StringComparison.Ordinal))
+        {
+            File.WriteAllText(FilePath, normalized, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            Log.LogMessage(MessageImportance.Normal, "Normalized the line breaks of " + FilePath);
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="NormalizeGeneratedOpenApiDocument"
+          AfterTargets="GenerateOpenApiDocuments"
+          Condition="'$(OpenApiGenerateDocumentsOnBuild)' == 'true'">
+    <NormalizeOpenApiDocument FilePath="$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/$(OpenApiDocumentsDirectory)/openapi.json'))" />
+  </Target>
+
 </Project>
