@@ -204,11 +204,11 @@ frontend/packages/api-client/
 $env:ConnectionStrings__DefaultConnection = "Host=127.0.0.1;Port=5433;Database=MySite;Username=build;Password=build"
 dotnet build src/MySite.Web/MySite.Web.csproj -m:1 -p:OpenApiGenerateDocumentsOnBuild=true
 # Сборка успешно завершена. Предупреждений: 0, Ошибок: 0
-# (Get-FileHash docs\openapi.json).Hash → 9F6C55A8D3E474B2FD283DA22D425E5BE5FBA043D803ADD7328905398ECCED53
+# (Get-FileHash docs\openapi.json).Hash → 2E8A5AF191F8836655B376F3B90265E4DC8A2E00E472FF8A4C48E12A8A00D912
 # повторный прогон — тот же хеш
 ```
 
-Файл 11 264 байта; `servers` в build-time документе нет (в runtime-снимке был — исследование 11 это
+Файл 11 256 байт; `servers` в build-time документе нет (в runtime-снимке был — исследование 11 это
 предсказывало), `openapi-typescript` его не использует.
 
 Фронтенд:
@@ -262,6 +262,17 @@ dotnet build src/MySite.Web/… -p:OpenApiGenerateDocumentsOnBuild=true; git dif
 `packages/api-client` не существует (pathspec от корня), проверка молча проходила. Путь исправлен на
 `frontend/packages/api-client`, после чего обе проверки ведут себя правильно в обе стороны.
 
+**Что нашёл первый прогон CI (и чем это кончилось).** `Lint, typecheck, build` был зелёным сразу, а
+`Build and test` упал на шаге сверки схемы: закоммиченная на Windows схема несла в описаниях
+экранированные `\r\n`, Linux перегенерировал те же описания с `\n`. Причина не в переводах строк
+исходников, а в компиляторе: Roslyn пишет XML-doc файл с CRLF на любой платформе, и эти символы
+попадают в описания OpenAPI. Документ был platform-dependent, то есть критерий «CI ловит расхождение»
+работал бы как «CI красный всегда». Исправлено целью `NormalizeGeneratedOpenApiDocument` в
+`MySite.Web.csproj`: после генерации экранированные `\r\n` в документе заменяются на `\n`, других
+отличий между платформами нет. Схема перегенерирована (хеш выше), `openapi.d.ts` от нормализации не
+изменился (JSDoc и так нёс `\n`), повторный прогон даёт тот же хеш. Проверка на Linux — повторный
+прогон CI в этом PR.
+
 Негативные проверки ESLint (временные файлы, удалены):
 
 ```text
@@ -294,6 +305,8 @@ packages/ui (ui-package)               import api-client
 - `93e7fc6` ci: две проверки расхождения — `.github/workflows/frontend.yml`, `backend.yml`.
 - `b4ffc86` docs: `WORKFLOW.md` (раздел «Generated API client», порядок гейтов, DoD п. 7),
   `ARCHITECTURE.md` (стек, раскладка, граница данных, тестовый контур), `frontend/README.md`.
+- `a6a30ae` fix: одна и та же схема на Windows и Linux — цель нормализации в `MySite.Web.csproj`,
+  перегенерированный `backend/docs/openapi.json`.
 
 **Что осталось за рамками и что требует решения владельца.**
 

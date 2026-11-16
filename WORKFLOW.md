@@ -190,7 +190,11 @@ dotnet build src/MySite.Web/MySite.Web.csproj -m:1 -p:OpenApiGenerateDocumentsOn
 ```
 
 The file lands in `backend/docs/openapi.json` and is deterministic for a fixed backend: two runs
-over the same code produce the same bytes. Then, from `frontend/`:
+over the same code produce the same bytes. It is also the same bytes on Linux and on Windows: the
+compiler writes its XML documentation file with CRLF on Windows, those line breaks reach the
+descriptions as `\r\n`, and Linux produces `\n` for the same text — so a target in `MySite.Web.csproj`
+normalizes the generated document to `\n`. Without it the CI diff would fail on every platform except
+the one that committed the file. Then, from `frontend/`:
 
 ```powershell
 pnpm --filter @mysite/api-client generate
