@@ -200,8 +200,13 @@ pnpm --filter @mysite/web test:e2e
 ```
 
 The API base URL is `API_BASE_URL` and defaults to `http://localhost:5054`; point it somewhere else
-and the page renders its error state instead. Without the API the data-path spec fails while the
-smoke spec still passes.
+and the page renders its error state instead. Without the API the data-path spec fails.
+
+In CI the three specs that read data from the API skip themselves (`CI` is set in the job), because
+the workflow has no database and no API: CI runs the smoke spec and the responsive and theme specs,
+which need no stack. The data path is verified locally with the commands above, as ticket 16 asked.
+The skip is deliberate and lives in `e2e/page.spec.ts`; running the whole suite against the live
+stack is what the local gate does.
 
 ## Generated API client
 

@@ -9,8 +9,21 @@ import { expect, test } from "@playwright/test";
  */
 const publishedProjects = ["DirectoryService", "MySite", "Harness"];
 
+/**
+ * The data path needs the seeded database and the API on :5054, which the CI job has
+ * neither of (ticket 20 kept CI on the stack-free smoke path). The smoke, responsive
+ * and theme specs run everywhere.
+ */
+const skipWithoutLocalStack = () =>
+  test.skip(
+    Boolean(process.env.CI),
+    "The data path needs the local API and database: see WORKFLOW.md, End-to-end tests.",
+  );
+
 test.describe("home page /ru", () => {
   test("shows the profile, three published projects and the contacts", async ({ page }) => {
+    skipWithoutLocalStack();
+
     await page.goto("/ru");
 
     await expect(page.getByRole("heading", { level: 1, name: "MySite" })).toBeVisible();
@@ -41,6 +54,8 @@ test.describe("home page /en", () => {
   test("shows English text, the Russian fallback for Harness and no unpublished project", async ({
     page,
   }) => {
+    skipWithoutLocalStack();
+
     await page.goto("/en");
 
     await expect(page.getByRole("heading", { level: 2, name: "About me" })).toBeVisible();
@@ -66,6 +81,8 @@ test.describe("locale switch", () => {
   test("moves between /ru and /en through the URL and marks the current locale", async ({
     page,
   }) => {
+    skipWithoutLocalStack();
+
     await page.goto("/ru");
 
     const ruPageNav = page.getByRole("navigation", { name: "Переключатель языка" });
