@@ -39,9 +39,10 @@ PostgreSQL, одна публичная страница на Next.js читае
   `<slug>` — имя файла тикета без номера и расширения. Это правило записано и в `.dsh/AGENTS.md`,
   § Project facts, строка `Git protocol`, и в стоячем контракте `.dsh/AGENT-TASKS.md`, чтобы его не
   приходилось повторять вслух.
-- Исполнитель **никогда не пушит**: ни `git push`, ни force, ни merge в `master`/`develop`, ни pull
-  request. Пуш и слияние — владельца. И `git fetch`/`git pull` тоже не его: доступ к GitHub по SSH с
-  этой машины не настроен.
+- Исполнитель сам делает `git fetch origin`, ветку от свежего `develop`, коммиты, push **своей**
+  ветки и PR в `develop` (`gh pr create --base develop`). Слияние PR, force-push, push в
+  `master`/`develop`, rebase/reset защищённых веток — только владелец. GitHub по SSH с этой машины
+  доступен (ключ `~/.ssh/my_ssh`).
 - Исполнитель загружает скиллы до начала работы: названные в файле задачи плюс те, что перечислены
   выше для его области. Механика — раздел «Skills» в `.dsh/AGENTS.md`.
 - Исполнитель не трогает `.scratch/`, кроме файла своего тикета; `map.md` правит только планер.
@@ -54,12 +55,11 @@ PostgreSQL, одна публичная страница на Next.js читае
 - **Стоячий контракт исполнителя — `.dsh/AGENT-TASKS.md`.** Там точные команды (сборка с `-m:1`,
   тесты из `backend/`, `docker compose up -d` + `pg_isready`, `dotnet ef migrations list` /
   `database update`), границы работы и критерий готовности. Исполнитель поднимает docker-контейнеры
-  и накатывает миграции на **локальную** базу сам; владельцу остаются пуш, слияние, живая база,
+  и накатывает миграции на **локальную** базу сам; владельцу остаются слияние PR, живая база,
   тексты сайта и деплой.
-- **Критерий закрытия задачи — зелёные тесты и чистая сборка.** Пока в проекте нет тестов,
-  `dotnet test MySite.slnx` сообщает «Запущено ноль тестов» и возвращает код **8**
-  (`Microsoft.Testing.Platform`, раннер задан в `backend/global.json`); с первым тестом (тикет 06)
-  критерий — код 0 при ненулевом числе пройденных тестов.
+- **Критерий закрытия задачи — зелёные тесты и чистая сборка.** `dotnet build` — 0 предупреждений
+  и 0 ошибок, `dotnet test MySite.slnx` — код 0 при ненулевом числе пройденных тестов. Состояние
+  «тестов нет, `dotnet test` возвращает 8» осталось в истории: тикет 06 его закрыл.
 - **Тесты исполнитель гоняет прямым запуском собранной сборки**
   (`dotnet tests\MySite.UnitTests\bin\Debug\net10.0\MySite.UnitTests.dll`): быстрее и даёт точные
   числа по каждому проекту. `dotnet test MySite.slnx` остаётся штатной командой владельца и CI.
@@ -118,6 +118,29 @@ PostgreSQL, одна публичная страница на Next.js читае
   `ConnectionStrings:DefaultConnection` и останавливает старт, если пуста. Коммит `9d7c74a`.
 - [05 — Починить устаревшие документы](issues/05-fix-stale-documents.md): закрыт **поглощением
   тикетом 02** — обе задачи правят один `ARCHITECTURE.md`, и делать это двумя заходами незачем.
+- [03 — Публичный API одной страницы](issues/03-public-api-contract-for-one-page.md):
+  `GET /api/v1/home` с `{ profile, projects }`, keyset-пагинация `(year DESC, id DESC)`, пустой
+  профиль — `200` с `profile: null`; бизнес-логика в `ContentService`, контроллер — транспорт.
+- [04 — Контент без админки](issues/04-content-loading-without-admin-panel.md): команда сидирования
+  из версионированного `backend/content/site-content.json`, идемпотентная, одна транзакция
+  ([ADR-0007](docs/adr/0007-content-seeding-through-a-command.md)).
+- [06 — Архитектурные тесты, юнит и CI](issues/06-architecture-tests-unit-tests-ci.md):
+  ArchUnitNET-правила с негативной фикстурой, юнит на локаль, интеграционные тесты через
+  Testcontainers; `backend.yml`; 43 теста, `dotnet test` — код 0.
+- [08 — Заглушки контента](issues/08-seed-placeholder-content.md): засеяны профиль и 4 проекта;
+  Harness — намеренно без `en`, Keycloak_Learn — неопубликован; повторный прогон сходится.
+- [12 — Маршруты публичной страницы](issues/12-public-route-shape.md): одна `/[lang]`, `/` → `308`
+  на `/ru` без `Accept-Language`, динамический рендер, `alternates.languages`/`og:locale`,
+  молчаливый fallback; переключатель — тикет 16.
+- [13 — Компоненты и токены](issues/13-component-home-and-tokens.md): дизайн-система в
+  `packages/ui` (только `src/index.ts` и `src/styles/globals.css`), FSD без слоя `app`, `pages` →
+  `_pages`, токены и тёмная тема в CSS пакета.
+- [14 — Скаффолд монорепы и гейты](issues/14-frontend-scaffold-and-gates.md): pnpm-монорепа,
+  Next.js 16.4/React 19.3/TS 6.0.3/Tailwind 4.3.3, ESLint 10 + typed linting + границы FSD,
+  lefthook, `frontend.yml`; `lint`/`typecheck`/`build` зелёные.
+- [18 — Граница данных](issues/18-data-fetching-boundary.md): серверный первый экран, тонкая
+  `getHomeContent` поверх клиента, синхронный view на пропсах, без query-библиотеки; Vitest — view
+  и клиент, Playwright — серверный путь и четыре состояния.
 
 Решения, принятые при разметке карты и записанные прямо здесь:
 
@@ -130,7 +153,8 @@ PostgreSQL, одна публичная страница на Next.js читае
   следование им.
 - **Дизайн** — минимальная типографика и токены; референсы владельца приходят этапом полировки.
 - **Тесты** — начинаем с архитектурных фитнес-функций и юнита на правило локали.
-- **CI** — GitHub Actions, build + test бэкенда.
+- **CI** — GitHub Actions: `.github/workflows/backend.yml` (restore → build → test) и
+  `.github/workflows/frontend.yml` (install → lint → typecheck → build; тесты добавит тикет 20).
 - **Identity-стек удаляется целиком** (тикет 01 выполнен). Это отмена части ADR-0003 и требует
   нового ADR (тикет 02).
 
