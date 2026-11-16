@@ -44,6 +44,14 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # The types are generated from the committed schema; a schema move that was
+      # not followed by a regeneration fails here, before the gates run. The
+      # pathspec is relative to the repository root, hence the -C and the prefix.
+      - name: Check the generated client matches the schema
+        run: |
+          pnpm --filter @mysite/api-client generate
+          git -C .. diff --exit-code -- frontend/packages/api-client
+
       - name: Lint
         run: pnpm lint
 
