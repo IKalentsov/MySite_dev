@@ -43,6 +43,23 @@ Blocked by: 03, 08, 12, 13, 14, 15, 18
 `better-layout`, `better-typography`, `better-colors`, `better-ui`, `better-writing` и сводный
 разбор `better-interface`; прогон `architecture-drift-check` по итогам изменения структуры.
 
+## Уточнения после исследования 11 (2026-11-16)
+
+- **Источник данных.** `getHomeContent` из 15 вызывает публичные функции `@mysite/api-client`;
+  страница не знает ни про `openapi-fetch`, ни про URL. Если 15 выбирает составной
+  `GET /api/v1/home`, `HomeContent` — это `{ profile: OwnerProfileResponse | null, projects:
+  PaginatedProjectsResponse }`; частичное состояние — «профиль пуст, проекты есть» (`profile:
+  null`), полный отказ — исключение и `error.tsx`. Если 15 выбирает два запроса, форма —
+  `{ profile, projects, failed }` по 18; выбор фиксируется в 15, страница подстраивается под него.
+- **Границы не двигаются.** `home-page.tsx` — тонкий async Server Component, `HomePageView` —
+  синхронный на пропсах; `cache: "no-store"`, без query-библиотеки, без `generateStaticParams`.
+- **Состояния.** Loading — `app/[lang]/loading.tsx`; Error — `app/[lang]/error.tsx` с retry;
+  Empty — `profile: null` и/или пустой `projects`; Success — данные; Partial — то, что пришло,
+  с пометкой. `profile: null` — не ошибка (03), поэтому это empty/partial, а не error.
+- **Тесты.** Синхронный view — Vitest + RTL (тикет 20), данные — фикстуры-пропсы; серверный путь
+  данных — Playwright против `next start` и локального API (20). `async` RSC Vitest'ом не
+  тестируется (18).
+
 ## Answer
 
 <!-- заполняется при закрытии -->
