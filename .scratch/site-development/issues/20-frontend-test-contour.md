@@ -1,7 +1,7 @@
 # 20 — Тестовый контур фронтенда
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 10, 14, 18
 
 ## Как работать с этой задачей
@@ -71,4 +71,131 @@ Blocked by: 10, 14, 18
 
 ## Answer
 
-<!-- заполняется при закрытии -->
+### Что сделано
+
+1. **Версии в каталоге.** Добавлены 11 новых пинов в `catalog:` в `frontend/pnpm-workspace.yaml`:
+   - vitest: 5.0.3 (из тикета 10)
+   - @testing-library/react: 16.3.3 (из тикета 10)
+   - @testing-library/dom: 10.4.2 (из тикета 10)
+   - @testing-library/jest-dom: 7.0.1 (из тикета 10)
+   - @testing-library/user-event: 14.6.7 (из тикета 10)
+   - jsdom: 30.1.2 (из тикета 10)
+   - msw: 3.0.2 (из тикета 10)
+   - @playwright/test: 1.63.0 (из тикета 10)
+   - vite: 8.3.8 (текущий stable из реестра, Vitest 5 требует peer `vite >=6.4.0`)
+   - @vitejs/plugin-react: 6.3.0 (текущий stable из реестра)
+   - vite-tsconfig-paths: 6.1.1 (текущий stable из реестра)
+
+2. **Vitest конфиг.** `frontend/apps/web/vitest.config.mts` — по официальному гайду Next.js:
+   `@vitejs/plugin-react`, `vite-tsconfig-paths`, `environment: "jsdom"`, `globals: true`,
+   `setupFiles`, `exclude: ["**/e2e/**"]`.
+
+3. **Setup-файл.** `frontend/apps/web/src/_pages/home/api/testing/vitest.setup.ts` — импортирует
+   `@testing-library/jest-dom/vitest`, поднимает MSW (`setupServer`), `listen()` с
+   `onUnhandledFrame: "bypass"` в `beforeAll`, `resetHandlers()` в `afterEach`, `close()` в
+   `afterAll`.
+
+4. **MSW-обработчики.** `frontend/apps/web/src/_pages/home/api/testing/handlers.ts` — один
+   обработчик на `GET http://localhost:5054/api/v1/home`; фикстуры типизированы `HomeResponse`,
+   `OwnerProfile` и `Project` из `@mysite/api-client`, дублей типов нет. Обработчики лежат рядом
+   с границей данных: политика ESLint разрешает импорт клиента только слою `pages`.
+
+5. **Компонентный тест.** `frontend/apps/web/src/__tests__/button.test.tsx` — три теста на
+   `Button` из `@mysite/ui`: рендер по роли и тексту, вызов `onClick`, проверка CSS-класса
+   варианта `destructive`. Без снимков и внутреннего состояния.
+
+6. **MSW-тест.** `frontend/apps/web/src/_pages/home/api/get-home.test.ts` — два теста: успешный
+   вызов `getHome("ru")` с проверкой полей ответа, и проверка что `getHome("xx")` при ошибке 400
+   бросает `ApiError`. Используется `server.use()` для переключения обработчика.
+
+7. **Playwright конфиг.** `frontend/apps/web/playwright.config.ts` — `testDir: "./e2e"`,
+   `webServer` с командой `pnpm exec next start -p 3100` (не 3000), `reuseExistingServer:
+   !process.env.CI`, один проект `chromium`.
+
+8. **E2E-тест.** `frontend/apps/web/e2e/home.spec.ts` — запрос `/` приводит на `/ru`, у
+   документа `<html lang="ru">`. Без базы и без API.
+
+9. **Скрипты.** В `apps/web/package.json` добавлены `test: "vitest run"` и
+   `test:e2e: "playwright test"`. В корневом `frontend/package.json` добавлен
+   `test: "pnpm --filter @mysite/web test && pnpm --filter @mysite/web test:e2e"`.
+
+10. **CI.** `.github/workflows/frontend.yml` — после шага `Build` идут
+    `Install Playwright browsers` → `Test` (`pnpm --filter @mysite/web test`) → `E2E`
+    (`pnpm --filter @mysite/web test:e2e`). Порядок: install → generate/client diff → lint →
+    typecheck → build → install browsers → test → e2e. Корневой `pnpm test` по-прежнему гоняет
+    оба локально, поэтому в CI взяты фильтрованные команды — без двойного прогона e2e.
+
+11. **tsconfig.** В `apps/web/tsconfig.json` добавлены `"types": ["vitest/globals",
+    "@testing-library/jest-dom"]` для глобальных функций Vitest и matchers jest-dom.
+
+### Правки после проверки архитектором
+
+Проверка нашла три дефекта, исправленных до PR; после правок все гейты перепрогнаны.
+
+- тест импортировал `./vitest.setup`, а файл лежит в `./testing/vitest.setup` — прогон был красным,
+  импорт исправлен;
+- в setup стоял `eslint-disable-next-line @typescript-eslint/no-unsafe-call` (глушить правило
+  нельзя) и неиспользуемый тип `SetupServer` — заменено на `setupServer(...handlers)` без
+  подавлений;
+- в `apps/web/package.json` был добавлен ненужный `"type": "module"` — убран.
+
+### Подтверждение (команды и вывод)
+
+**`pnpm install --frozen-lockfile`** — проходит, lockfile обновлён командой `pnpm install
+--lockfile-only`.
+
+**`pnpm lint`** — чисто: `$ eslint .` без ошибок.
+
+**`pnpm typecheck`** — чисто: все 6 пакетов проходят `tsc --noEmit`.
+
+**`pnpm build`** — чисто: Next.js 16.4.0, TypeScript пройден, 2 страницы сгенерированы.
+
+**`pnpm --filter @mysite/web test`** (Vitest):
+```
+ ✓ src/_pages/home/api/get-home.test.ts (2 tests) 42ms
+ ✓ src/__tests__/button.test.tsx (3 tests) 111ms
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+```
+
+**`pnpm --filter @mysite/web test:e2e`** (Playwright, сервер поднимается сам на порту 3100):
+```
+[1/1] [chromium] › e2e\home.spec.ts:3:5 › GET / redirects to /ru and the document has lang="ru"
+  1 passed (1.8s)
+```
+
+### Список файлов
+
+**Созданы:**
+- `frontend/apps/web/vitest.config.mts` — конфиг Vitest по гайду Next.js
+- `frontend/apps/web/src/_pages/home/api/testing/vitest.setup.ts` — jest-dom + жизненный цикл MSW
+- `frontend/apps/web/src/_pages/home/api/testing/handlers.ts` — MSW-обработчик на `/api/v1/home`
+- `frontend/apps/web/src/_pages/home/api/get-home.test.ts` — MSW-тест `getHome` (2 теста)
+- `frontend/apps/web/src/__tests__/button.test.tsx` — компонентный тест на Button (3 теста)
+- `frontend/apps/web/playwright.config.ts` — конфиг Playwright, порт 3100
+- `frontend/apps/web/e2e/home.spec.ts` — smoke-тест: `/` → `/ru`, `lang="ru"`
+
+**Изменены:**
+- `frontend/pnpm-workspace.yaml` — 11 пинов в `catalog:`
+- `frontend/apps/web/package.json` — скрипты test/test:e2e и devDependencies
+- `frontend/package.json` — корневой `test` (vitest + e2e)
+- `frontend/apps/web/tsconfig.json` — `types` для vitest/jest-dom
+- `.github/workflows/frontend.yml` — установка браузера, Test, E2E после Build
+
+### Что осталось за рамками
+
+- Тесты на `getProfile`/`getProjects` — в пакете пока нет публичных функций для них (только
+  `getHome`). Добавляются при появлении API.
+- Не менялся продуктовый код (`home-page.tsx`, `get-home-content.ts`) — только ради тестов.
+
+### Git
+
+Ветка `feature/frontend-test-contour` от `develop` `4900cb1537fa2f8ed6dd08215d001b6a777a4cba`. Коммиты `da7f069` (контур), `151f1db` (закрытие тикета), `0db7a26` (фикс CI: playwright install из `apps/web`). CI по PR зелёный. PR в `develop`:
+https://github.com/IKalentsov/MySite_dev/pull/21.
+### Открытые вопросы
+
+- Vite 8 резолвит tsconfig paths нативно и при запуске подсказывает убрать `vite-tsconfig-paths`;
+  плагин оставлен, потому что его называет тикет. Замена на нативную опцию — отдельное изменение.
+- Локально браузер Playwright был установлен вручную (`npx playwright install --with-deps chromium`);
+  в CI это делает автоматический шаг. Зависимости ОС (libglib, libnss и т.д.) на Windows не требуются.
