@@ -115,9 +115,11 @@ apps/web/src/app → _pages → widgets → features → entities → shared
   Tailwind 4 `@theme`/`:root`/`.dark`, with `@custom-variant dark` and `@source` covering both
   `packages/ui` and `apps/web/src`. `apps/web/src/app/globals.css` only imports Tailwind and that
   file.
-- `/` redirects to `/ru`; `/[lang]` is the only route, and `<html lang>` comes from that segment.
-  The final route shape — status code, language switch, metadata — belongs to
-  [ticket 12](.scratch/site-development/issues/12-public-route-shape.md).
+- `/` redirects to `/ru`; `/[lang]` is the only route, and `<html lang>` comes from that segment. The
+  segment is validated in one place (`shared/config/locales.ts`) by both the layout and the page, so an
+  unsupported locale is a 404 instead of a 400 from the API. The locale switch is two plain links: the
+  locale is the only state the page shares through its URL
+  ([ticket 12](.scratch/site-development/issues/12-public-route-shape.md)).
 - `packages/api-client` is the frontend's only way to the API: `openapi-typescript` turns the
   committed `backend/docs/openapi.json` into types, `openapi-fetch` wraps `fetch` with them, and
   `src/index.ts` exposes `createApiClient`, `getHome`, `ApiError` and the response types. Both
@@ -128,10 +130,20 @@ apps/web/src/app → _pages → widgets → features → entities → shared
   `API_BASE_URL`, `http://localhost:5054` by default.
 - One screen, one data boundary: `_pages/home/api/get-home-content.ts` calls `getHome` from the
   client and returns `{ profile, projects }`; the route renders the screen and the data path stays
-  server-side (`cache: "no-store"`, no query library). The screen and its four states are
-  [ticket 16](.scratch/site-development/issues/16-the-page-itself.md).
-- The gates are `pnpm lint`, `pnpm typecheck` and `pnpm build` from `frontend/`; the exact commands,
-  the hook and CI are in `WORKFLOW.md`.
+  server-side (`cache: "no-store"`, no query library). `home-page.tsx` is the thin asynchronous
+  Server Component, `home-page-view.tsx` is the synchronous view on props that decides the screen's
+  four states, and `app/[lang]/loading.tsx` and `app/[lang]/error.tsx` are the route's loading and
+  error files ([ticket 16](.scratch/site-development/issues/16-the-page-itself.md)).
+- The screen is composed from slices below it, each exposing an `index.ts` as its public API: the
+  `site-header`, `profile-about`, `project-list` and `contact-links` widgets, the `locale-switch`
+  feature, and the `project` entity as a card. `shared/` holds what they all read — the supported
+  locales, the page's own interface copy (`shared/i18n/home-text.ts`) and the placeholder contact
+  links — so no slice imports a sibling of its own layer. The API's `Project` is passed straight into
+  a card whose props name the fields it renders: the generated contract stays the single source of
+  truth, while no layer below `pages` imports the API client.
+- The gates are `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test` and — with the local stack
+  up — `pnpm test:e2e` from `frontend/`; the exact commands, their prerequisites, the hook and CI are
+  in `WORKFLOW.md`.
 
 ## Current shape of the code
 
@@ -220,9 +232,13 @@ makes the direction in this document enforceable instead of advisory. Every rule
 `MySite.ArchitectureTests.NegativeFixture` — a deliberately broken assembly that must fail it —
 because a check that has never been seen to fail is not a check.
 
-The frontend's test contour is decided ([ticket 10](.scratch/site-development/issues/10-frontend-quality-and-test-contour.md):
-Vitest, React Testing Library, MSW and Playwright) but not installed: the first tests land with
-ticket 20. The frontend gates that do exist are the generated-client diff, lint, typecheck and build.
+The frontend's test contour is installed ([ticket 10](.scratch/site-development/issues/10-frontend-quality-and-test-contour.md),
+[ticket 20](.scratch/site-development/issues/20-frontend-test-contour.md)): Vitest 5.0.3 with React
+Testing Library and MSW in `apps/web`, and Playwright 1.63.0 in `apps/web/e2e`. Component tests cover
+the synchronous view and the route's loading and error files, MSW covers the API client, and Playwright
+drives the server-rendered page against the real local API. The asynchronous Server Component itself is
+tested by no runner, which is why its data path is an end-to-end test. The frontend gates are the
+generated-client diff, lint, typecheck, build, `test` and `test:e2e`.
 
 ## Known deviations from the harness rules
 
@@ -246,12 +262,11 @@ Product and process questions are not here; they live in `.dsh/AGENTS.md`.
   ([ADR-0006](docs/adr/0006-identity-stack-removed.md)). It will be written from scratch when the
   admin panel's first write scenario arrives.
 - The administration panel: planned, not designed.
-- Localisation. Russian is the primary language and English is a switchable alternative; how the
-  switch is expressed in routes and content is not decided.
-- The first screen and its data boundary. The frontend shell exists and its gates are green, but
-  the page is a placeholder: [ticket 16](.scratch/site-development/issues/16-the-page-itself.md)
-  builds it and [ticket 18](.scratch/site-development/issues/18-data-fetching-boundary.md) decides
-  where the data is fetched.
-- The generated API client. `packages/api-client` is a skeleton; tickets 11/15 generate it and wire
-  it to the UI.
-- Frontend tests. The runner and levels are chosen in ticket 10 but no test runner is installed yet.
+- The visual design. The page follows the design system's tokens with minimal typography and layout;
+  the owner's references, and with them the real visual language, arrive as a separate step.
+- Contact data. The contact block is two placeholder links in `shared/config/contact-links.ts`, because
+  no endpoint serves contact data yet; they are replaced together with the owner's texts (ticket 07)
+  and by the contact form when it is specified.
+- A real English text. The route, the per-locale tables and the fallback in code are in place
+  ([ADR-0005](docs/adr/0005-bilingual-content-storage.md)); what English shows today is the seed
+  placeholder, and the Harness project deliberately has no translation so the fallback stays covered.

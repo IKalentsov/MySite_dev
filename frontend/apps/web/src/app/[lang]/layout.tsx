@@ -4,14 +4,7 @@ import type { ReactNode } from "react";
 
 import { Providers } from "../providers";
 import "../globals.css";
-
-const locales = ["ru", "en"] as const;
-
-type Locale = (typeof locales)[number];
-
-function isLocale(value: string): value is Locale {
-  return locales.some((locale) => locale === value);
-}
+import { isLocale, DEFAULT_LOCALE } from "@/shared/config/locales";
 
 export async function generateMetadata({
   params,
@@ -19,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ lang: string }>;
 }): Promise<Metadata> {
   const { lang } = await params;
-  const locale = isLocale(lang) ? lang : "ru";
+  const locale = isLocale(lang) ? lang : DEFAULT_LOCALE;
 
   return {
     title: "MySite",
